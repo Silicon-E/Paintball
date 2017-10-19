@@ -150,7 +150,7 @@ public class FPControl : MonoBehaviour {
 				collider.material.dynamicFriction = 10f;
 			}
 
-			if(inp.jump)
+			if(inp.jump && crouchFactor>0.75f)//If crouchFactor grater than halfway down
 			{
 				physics.AddForce((Vector3.up*(jumpI + horizMove.magnitude*jumpPortion))*physics.mass, ForceMode.Impulse);
 				Vector3 newV = new Vector3(physics.velocity.x*(1-jumpPortion), physics.velocity.y, physics.velocity.z*(1-jumpPortion));
