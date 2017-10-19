@@ -3,40 +3,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-public class FPControl : NetworkBehaviour {
+public class FPControl : MonoBehaviour {
 
+	public Controller control;
 	public Collider collider;
 	public Rigidbody physics;
-	public float moveA;
+	public float moveV;
 	public float maxMove;
 	public float jumpI;
+	public float jumpPortion;//Portion of horix movement converted to vertical movement
 	public Camera camera;
 
 	public LayerMask onGroundMask;
 
 	private bool cursorEngaged = true;
 	public GameObject player = null;
-	public PlayerModel model = null;
-
-	private LayerMask pickupMask;
-	private Rigidbody pickupObj;
-	private Pickup pickupScript;
 
 	void Start ()
 	{
-		pickupMask = LayerMask.GetMask(new string[] {"Pickup"});
 		Cursor.lockState = CursorLockMode.Locked;
 		Cursor.visible = false;
 	}
 
-	public void Init(GameObject p, PlayerModel m, Rigidbody r, Collider c, int n)
+	public void Init(GameObject p, Rigidbody r, Collider c, int n)
 	{
 		player = p;
-		model = m;
 		physics = r;
 		collider = c;
-		camera.gameObject.GetComponent<RedShader>().pNum = n;
-		model.Hide();
 	}
 
 	void Update ()
@@ -65,10 +58,10 @@ public class FPControl : NetworkBehaviour {
 		{
 			Cursor.lockState = CursorLockMode.Locked;
 
-			//Debug.Log("lEuler: "+camera.transform.localEulerAngles.x+", "+camera.transform.localEulerAngles.y+", "+camera.transform.localEulerAngles.z);
-			camera.transform.Rotate(new Vector3(0, Input.GetAxis("Mouse X")*mouseMulti, 0), Space.World);//Rotate Horizontal
+			Controller.input inp = control.GetInput();
+			camera.transform.Rotate(new Vector3(0, inp.mouse.x, 0), Space.World);//Rotate Horizontal
 			float preY = camera.transform.localEulerAngles.y;
-			camera.transform.Rotate(new Vector3(-Input.GetAxis("Mouse Y")*mouseMulti, 0, 0));//Rotate Vertical
+			camera.transform.Rotate(new Vector3(-inp.mouse.y, 0, 0));//Rotate Vertical
 			float rawX = camera.transform.localEulerAngles.x;
 			if(camera.transform.localEulerAngles.z>90)
 			{
@@ -79,11 +72,10 @@ public class FPControl : NetworkBehaviour {
 				else
 					camera.transform.Rotate(270-camera.transform.localEulerAngles.x, 0, 0);
 			}
-			model.pointer.transform.rotation = camera.transform.rotation;
 			//player.transform.RotateAround(player.transform.position, Vector3.up, camera.transform.localRotation.eulerAngles.y);
 			//camera.transform.RotateAround(camera.transform.position, Vector3.up, -camera.transform.localRotation.eulerAngles.y);
 
-			Debug.DrawRay(camera.transform.position, camera.transform.forward);
+			Debug.DrawRay(camera.transform.position, camera.transform.forward, Color.blue);
 
 		}else
 			Cursor.lockState = CursorLockMode.None;
@@ -100,95 +92,57 @@ public class FPControl : NetworkBehaviour {
 
 		if(cursorEngaged)
 		{
+			Controller.input inp = control.GetInput();
+			Debug.Log(inp.mouse);
 			//                 position                                          halfextents                           direction     rotation        maxDist  layerMask
-			if(Physics.BoxCast(player.transform.position/*+new Vector3(0f,-0.5f,0f)*/, new Vector3(0.249f,0.01f,0.249f), Vector3.down, Quaternion.identity, 0.51f, onGroundMask))
+			RaycastHit hit;
+			Debug.DrawRay(player.transform.position, Vector3.down*(1.01f), Color.red);
+			if(Physics.SphereCast(player.transform.position, 0.5f, Vector3.down, out hit, 1.01f-0.5f, onGroundMask))
 			{
-				Transform tf = model.pointer.transform;
-				tf.rotation = Quaternion.Euler(0, model.pointer.transform.rotation.eulerAngles.y, 0);
-				Vector3 moveVec = Vector3.zero;
-				if(Input.GetKey(KeyCode.W))
-					moveVec += tf.forward;
-				if(Input.GetKey(KeyCode.S))
-					moveVec += tf.forward*-1f;
-				if(Input.GetKey(KeyCode.D))
-					moveVec += tf.right;
-				if(Input.GetKey(KeyCode.A))
-					moveVec += tf.right*-1f;
+				Vector3 horizMove = new Vector3(physics.velocity.x, 0f, physics.velocity.z);//X & Z movement
+				Vector3 moveVec = Quaternion.Euler(0,camera.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y);
 
-				moveVec.Normalize();
-
-				Vector3 movingVec = new Vector3(physics.velocity.x, 0f, physics.velocity.z);
 				if(moveVec != Vector3.zero)
 				{//Debug.Log("goin");
-					if(movingVec.magnitude<=maxMove)
+					if(horizMove.magnitude<=maxMove)
 					{
 						collider.material.staticFriction = 0f;
 						collider.material.dynamicFriction = 0f;
+						physics.velocity = moveVec*moveV;
 					}else
 					{
 						collider.material.staticFriction = 0.5f;
 						collider.material.dynamicFriction = 0.5f;
+						if(Vector3.Dot(horizMove, moveVec)<1f)
+							physics.AddForce(moveVec*moveV, ForceMode.Acceleration);//Applies velocity input as acceleration (a cheap fix)
 					}
 
-					if(movingVec.magnitude<=maxMove || Vector3.Dot(movingVec, moveVec)<1f)
+					/*if(horizMove.magnitude<=maxMove || Vector3.Dot(horizMove, moveVec)<1f)
 					{
-						physics.AddForce(moveVec*moveA, ForceMode.Acceleration);
-					}
+						physics.AddForce(moveVec*moveV, ForceMode.Acceleration);
+					}*/
 				}else
 				{//Debug.Log("stoppin");
-					collider.material.staticFriction = 5f;
-					collider.material.dynamicFriction = 5f;
+					//physics.velocity = Vector3.zero;
+					collider.material.staticFriction = 10f;
+					collider.material.dynamicFriction = 10f;
 				}
 
-				if(Input.GetKeyDown(KeyCode.Space))
-					physics.AddForce(Vector3.up*jumpI*physics.mass, ForceMode.Impulse);
+				if(inp.jump)
+				{
+					physics.AddForce((Vector3.up*(jumpI + horizMove.magnitude*jumpPortion))*physics.mass, ForceMode.Impulse);
+					Vector3 newV = new Vector3(physics.velocity.x*(1-jumpPortion), physics.velocity.y, physics.velocity.z*(1-jumpPortion));
+					physics.velocity = newV;
+				}
 			}else
 			{
 				collider.material.staticFriction = 0f;
 				collider.material.dynamicFriction = 0f;
 			}
-		}//end of if engaged
-
-		if(pickupObj!=null)
+		}else //end of if engaged
 		{
-			pickupObj.velocity = physics.velocity + (camera.transform.position + camera.transform.forward - pickupObj.position)*20; //   /Time.fixedDeltaTime;
-			if(!isServer) CmdUpdateCubePos(pickupObj.gameObject, pickupObj.transform.position);
-			//{
-			//	pickupScript.pos = pickupObj.transform.position;
-			//	pickupScript.rot = pickupObj.transform.rotation;
-			//	pickupScript.vel = pickupObj.velocity;
-			//}
-			if(Vector3.Distance(pickupObj.position, camera.transform.position)>1.25f || pickupScript.side!=(isServer ?1 :0))
-			{
-				ReleasePickup();
-			}
+			collider.material.staticFriction = 0.5f;
+			collider.material.dynamicFriction = 0.5f;
 		}
-	}
-
-	[Command]
-	void CmdUpdateCubePos(GameObject g, Vector3 p)
-	{
-		NetworkIdentity objNetId = g.GetComponent<NetworkIdentity>();        
-		if (!hasAuthority)
-		{
-			objNetId.AssignClientAuthority(connectionToClient);   
-		}
-		g.transform.position = p;
-	}
-
-	void ReleasePickup()
-	{
-		pickupObj.velocity = physics.velocity;
-		Collider c = pickupObj.GetComponent<Collider>();
-		c.material.staticFriction = 1f;
-		c.material.dynamicFriction = 1f;
-		pickupObj.mass = 1f;
-
-		pickupObj = null;
-		pickupScript.side = -1;
-		//pickupScript.pos = null;
-		//pickupScript.rot = null;
-		//pickupScript.vel = null;
-		//pickupScript.localPlayerAuthority = false;
 	}
 }

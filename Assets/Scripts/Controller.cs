@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Controller : MonoBehaviour {
+public abstract class Controller : MonoBehaviour {
 
 	public struct input
 	{
 		public Vector2 move;
-		public Vector2 look;
+		public Vector2 mouse;
 		public bool jump;
 		public bool crouch;
 		public bool mouseL;
 	}
 
-	public virtual input GetInput() {}
+	public abstract input GetInput();// {return new input();}
 }

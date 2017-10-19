@@ -11,7 +11,7 @@ public class PlayerControl : Controller {
 		
 	}
 
-	public input getInput()
+	public override input GetInput()
 	{
 		input i = new input();
 
@@ -19,17 +19,19 @@ public class PlayerControl : Controller {
 		if(Input.GetKey(KeyCode.W))
 			moveVec.y++;
 		if(Input.GetKey(KeyCode.S))
-			moveVec.y++;
+			moveVec.y--;
 		if(Input.GetKey(KeyCode.D))
-			moveVec.y++;
+			moveVec.x++;
 		if(Input.GetKey(KeyCode.A))
-			moveVec.y++;
-
+			moveVec.x--;
 		moveVec.Normalize();
+		i.move=moveVec;
 
-		input.look = new Vector2(Input.GetAxis("Mouse X")*mouseMulti, Input.GetAxis("Mouse Y")*mouseMulti);
-		input.jump = Input.GetKey(KeyCode.Space);
-		input.crouch = Input.GetKey(KeyCode.LeftShift);
-		input.mouseL = Input.GetMouseButtonDown(0);
+		i.mouse = new Vector2(Input.GetAxis("Mouse X")*mouseMulti, Input.GetAxis("Mouse Y")*mouseMulti);
+		i.jump = Input.GetKey(KeyCode.Space);
+		i.crouch = Input.GetKey(KeyCode.LeftShift);
+		i.mouseL = Input.GetMouseButtonDown(0);
+
+		return i;
 	}
 }
