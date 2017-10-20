@@ -7,7 +7,7 @@ public class Shooting : MonoBehaviour {
     // Use this for initialization
 
     //postition where to "shoot" raycast from
-    public Camera cam;
+    public Camera camera;
     private GameObject hitObject;
 
 
@@ -27,10 +27,9 @@ public class Shooting : MonoBehaviour {
             //Store hit info
             RaycastHit hit;
 
-
             //Check if Raycast hits anything 
-            //Physics.Raycast(Camera postition[Vector 3], Camera direction[Vector 3], hit info, Layer in which to check for collisons[layer 2]);
-            if (Physics.Raycast(cam.transform.position, cam.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets"))){
+            //Physics.Raycast(cameraera postition[Vector 3], cameraera direction[Vector 3], hit info, Layer in which to check for collisons[layer 2]);
+            if (Physics.Raycast(camera.transform.position, camera.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets"))){
 
                 //sends message to Target.cs that target has been hit
                 hitObject = hit.transform.gameObject;
@@ -41,12 +40,12 @@ public class Shooting : MonoBehaviour {
                 Debug.Log("Hit: " + hit.collider);
 
                 //Draws Raycast line, Green if it collided with anything on layer 2
-                Debug.DrawRay(cam.transform.position, cam.transform.TransformDirection(Vector3.forward) * 100, Color.green);
+                Debug.DrawRay(camera.transform.position, camera.transform.TransformDirection(Vector3.forward) * 100, Color.green);
             }
             else
             {
                 //Draws raycast line, Red if it didn't collide with anything on layer 2
-                Debug.DrawRay(cam.transform.position,cam.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
+                Debug.DrawRay(camera.transform.position,camera.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
             }
         }
     }

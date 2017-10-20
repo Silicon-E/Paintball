@@ -78,13 +78,40 @@ public class FPControl : MonoBehaviour {
 			}
 			//player.transform.RotateAround(player.transform.position, Vector3.up, camera.transform.localRotation.eulerAngles.y);
 			//camera.transform.RotateAround(camera.transform.position, Vector3.up, -camera.transform.localRotation.eulerAngles.y);
-
 			Debug.DrawRay(camera.transform.position, camera.transform.forward, Color.blue);
+
+			if(inp.mouseL)
+			{
+				Debug.Log("Bang");
+				RaycastHit hit;
+				//Check if Raycast hits anything
+				if (Physics.Raycast(camera.transform.position, camera.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets")))
+				{
+					//sends message to Target.cs that target has been hit
+					GameObject hitObject = hit.transform.gameObject;
+					Destroy(hitObject);
+
+					//Sends hit info to console saying if the raycast "Hit" anything thats not on layer 2, and what it hit
+					Debug.Log("Hit: " + hit.collider);
+
+					//Draws Raycast line, Green if it collided with anything on layer 2
+					Debug.DrawRay(camera.transform.position, camera.transform.TransformDirection(Vector3.forward) * 100, Color.green);
+				}
+				else
+				{
+					//Draws raycast line, Red if it didn't collide with anything on layer 2
+					Debug.DrawRay(camera.transform.position,camera.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
+				}
+			}
 
 		}else
 			Cursor.lockState = CursorLockMode.None;
 		camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
 	}
+
+
+	//END UPDATE, BEGIN FIXEDUPDATE ---------------------------------------------------------------------------------------------------------------------
+
 
 	void FixedUpdate ()
 	{
