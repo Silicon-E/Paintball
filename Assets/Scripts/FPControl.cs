@@ -18,6 +18,10 @@ public class FPControl : MonoBehaviour {
 	public Camera camera;
 	public float camHeight;
 	public LayerMask onGroundMask;
+	public GameObject bulletPrefab;
+
+	//[HideInInspector]
+	public int team;
 
 	private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
@@ -82,6 +86,9 @@ public class FPControl : MonoBehaviour {
 
 			if(inp.mouseL)
 			{
+				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team);
+
 				Debug.Log("Bang");
 				RaycastHit hit;
 				//Check if Raycast hits anything

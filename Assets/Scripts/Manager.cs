@@ -1,11 +1,11 @@
-﻿//Code from Unify Wiki; I don't know how it works.
-
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Manager : Singleton<Manager> {
-	protected Manager () {} // guarantee this will be always a singleton only - can't use the constructor!
-
-	public string myGlobalVar = "whatever";
+public class Manager
+{
+	static public Color[] teamColors = {
+		new Color(1f, 0f, 0.5f),
+		new Color(0f, 0.5f, 1f)
+	};
 }
