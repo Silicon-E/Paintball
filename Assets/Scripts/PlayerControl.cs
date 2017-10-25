@@ -6,11 +6,6 @@ public class PlayerControl : Controller {
 
 	public float mouseMulti;
 
-	// Use this for initialization
-	void Start () {
-		
-	}
-
 	public override input GetInput()
 	{
 		input i = new input();

@@ -18,10 +18,15 @@ public class FPControl : MonoBehaviour {
 	public Camera camera;
 	public float camHeight;
 	public LayerMask onGroundMask;
+	public GameObject bulletPrefab;
+
+	//[HideInInspector]
+	public int team;
 
 	private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
+	private int health = 100;//TODO: raplace with deliberated helath system
 
 	void Start ()
 	{
@@ -34,6 +39,18 @@ public class FPControl : MonoBehaviour {
 		player = p;
 		physics = r;
 		collider = c;
+	}
+
+	public bool Damage(int amount)//Called to damage this controller
+	{
+		health-=amount;//TODO: replace with deliberated damage system
+		if(health<=0)
+		{
+			//TODO: spawn ragdoll
+			Destroy(gameObject);//Destroy on next frame
+			return true;
+		}
+		else return false;
 	}
 
 	void Update ()
@@ -82,7 +99,10 @@ public class FPControl : MonoBehaviour {
 
 			if(inp.mouseL)
 			{
-				Debug.Log("Bang");
+				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team);
+
+				/*Debug.Log("Bang");
 				RaycastHit hit;
 				//Check if Raycast hits anything
 				if (Physics.Raycast(camera.transform.position, camera.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets")))
@@ -101,7 +121,7 @@ public class FPControl : MonoBehaviour {
 				{
 					//Draws raycast line, Red if it didn't collide with anything on layer 2
 					Debug.DrawRay(camera.transform.position,camera.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
-				}
+				}*/
 			}
 
 		}else
