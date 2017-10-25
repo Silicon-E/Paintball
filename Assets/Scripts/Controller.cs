@@ -14,4 +14,6 @@ public abstract class Controller : MonoBehaviour {
 	}
 
 	public abstract input GetInput();// {return new input();}
+
+	FPControl fp;
 }
