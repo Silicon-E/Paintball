@@ -25,7 +25,7 @@ public class FPControl : MonoBehaviour {
 	//[HideInInspector]
 	public int team;
 
-	private float fireCooldown = 0f;
+	[HideInInspector]public float fireCooldown = 0f;
 	private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
@@ -51,7 +51,7 @@ public class FPControl : MonoBehaviour {
 		if(health<=0)
 		{
 			//TODO: spawn ragdoll
-			//Destroy(gameObject);//Destroy on next frame
+			Destroy(gameObject);//Destroy on next frame
 			return true;
 		}
 		else return false;

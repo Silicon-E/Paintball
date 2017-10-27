@@ -6,11 +6,13 @@ using UnityEngine.UI;
 using UnityEngine.Networking.Types;
 using System.Runtime.ConstrainedExecution;
 using System;
+using UnityEngine.Events;
 
 public class AIControl : Controller {
 
 	public FPControl fp;
 	static float degPerSec = 180;
+	//static float distPerDeg = 4f/45f;//NoiseMulti bonus per degrees of mouse movement
 	public NavMeshAgent agent;
 	public GameObject target;
 	Vector3 noise;
@@ -26,14 +28,21 @@ public class AIControl : Controller {
 	bool lookAtTarget(ref input inp)
 	{
 		if(target==null) return false;
+
+		Quaternion preRot = fp.camera.transform.rotation;
+
 		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camera.transform.position));
-		Debug.Log(velOffset);
+		Debug.Log(noise.x); velOffset *= (noise.x+1)*0.5f;//Essentially a random float from 0 to 1 that is the same for each shot
 		Vector3 aimPos = target.transform.position + velOffset;
+
 		fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camera.transform.position), degPerSec*Time.deltaTime*noiseMulti);
+
 		float sep = Vector3.Distance(aimPos, fp.camera.transform.position + fp.camera.transform.forward*Vector3.Distance(target.transform.position, fp.camera.transform.position));
 		noiseMulti = Mathf.Min(1, sep*0.5f);
+		//noiseMulti += Quaternion.Angle(preRot, fp.camera.transform.rotation) *distPerDeg;
+		//Mathf.Clamp(noiseMulti, 0f, 1f);
 		if(sep<1f)
-			inp.mouseL = true;
+			Fire(ref inp);
 		return true;
 	}
 	bool lookIdle(ref input inp)//Look in moving direction
@@ -92,8 +101,6 @@ public class AIControl : Controller {
 		agent.updatePosition = false;
 		agent.updateRotation = false;
 
-		noise = new Vector3(UnityEngine.Random.value*2-1, UnityEngine.Random.value*2-1, UnityEngine.Random.value*2-1);
-
 		lookPris.Add(new Priority(lookAtTarget));
 		lookPris.Add(new Priority(lookIdle));
 		movePris.Add(new Priority(moveAway));
@@ -121,6 +128,14 @@ public class AIControl : Controller {
 		}
 		
 		return inp;
+	}
+
+	void Fire(ref input inp)
+	{
+		if(fp.fireCooldown>0) return;
+
+		inp.mouseL = true;
+		noise = new Vector3(UnityEngine.Random.value*2-1, UnityEngine.Random.value*2-1, UnityEngine.Random.value*2-1);
 	}
 
 	void SetTarget(GameObject newTarget)
