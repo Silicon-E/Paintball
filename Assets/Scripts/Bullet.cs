@@ -43,7 +43,7 @@ public class Bullet : MonoBehaviour {
 	void FixedUpdate ()
 	{
 		count += Time.deltaTime;
-		Debug.Log(count);
+		//Debug.Log(count);
 		if(count*speed>rangeFinal){
 			Destroy(gameObject); return; }
 		RaycastHit hit;
@@ -68,7 +68,7 @@ public class Bullet : MonoBehaviour {
 			{
 				RayHit(hit);
 				//Speed up to hit target, modify start and range to keep look consistent (since position is calculated independently of prev position)
-				speed = ((end-start).magnitude -range2) / markFinal;
+				speed = ((end-start).magnitude -range2) / (markFinal-mark2);
 				start -= (end-start).normalized * speed*mark2;
 				rangeFinal += speed*mark2;
 			}
@@ -79,9 +79,9 @@ public class Bullet : MonoBehaviour {
 		Vector3 posFar = start + showDir*count*speed;
 		Vector3 posNear = start + showDir*Mathf.Max(count*speed -2f,  0f);//Bullet length: 2
 		line.SetPositions(new Vector3[] {posFar, posNear});
-
-		Debug.DrawRay(origin, direction * rangeFinal, Color.red);
-		Debug.DrawRay(end, Vector3.up, Color.cyan);
+		line.enabled = true;
+		//Debug.DrawRay(origin, direction * rangeFinal, Color.red);
+		//Debug.DrawRay(end, Vector3.up, Color.cyan);
 	}
 
 	private void RayHit(RaycastHit hit)
@@ -92,10 +92,17 @@ public class Bullet : MonoBehaviour {
 		FPControl fp = hit.collider.gameObject.GetComponent<FPControl>();
 		if(fp!=null)
 		{
-			if(fp.Damage(10))//TODO: replace with deliberated damage system
+			if(fp.Damage(10, -direction))//TODO: replace with deliberated damage system
 			{
 				//TODO: returns true if damage was lethal
 			}
 		}
+	}
+
+	public static float DistToDelay(float dist)//Return delay of bullet at a given range
+	{
+		if(dist<=range1) return 0f;
+		else if(dist<=range2) return mark2;
+		else return markFinal;
 	}
 }

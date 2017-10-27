@@ -15,14 +15,17 @@ public class FPControl : MonoBehaviour {
 	public float jumpI;
 	public float jumpPortion;//Portion of horix movement converted to vertical movement
 	public float crouchSpeed;
-	public Camera camera;
+	public GameObject camera;
 	public float camHeight;
 	public LayerMask onGroundMask;
 	public GameObject bulletPrefab;
+	public float fireDelay;
+	public DmgIndicator indicator;
 
 	//[HideInInspector]
 	public int team;
 
+	[HideInInspector]public float fireCooldown = 0f;
 	private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
@@ -41,9 +44,10 @@ public class FPControl : MonoBehaviour {
 		collider = c;
 	}
 
-	public bool Damage(int amount)//Called to damage this controller
+	public bool Damage(int amount, Vector3 dir)//Called to damage this controller
 	{
 		health-=amount;//TODO: replace with deliberated damage system
+		if(indicator!=null) indicator.Add(dir);
 		if(health<=0)
 		{
 			//TODO: spawn ragdoll
@@ -75,30 +79,41 @@ public class FPControl : MonoBehaviour {
 
 
 
-		if(cursorEngaged)
+		if(cursorEngaged || !(control is PlayerControl))
 		{
 			Cursor.lockState = CursorLockMode.Locked;
 
 			Controller.input inp = control.GetInput();
-			camera.transform.Rotate(new Vector3(0, inp.mouse.x, 0), Space.World);//Rotate Horizontal
-			float preY = camera.transform.localEulerAngles.y;
-			camera.transform.Rotate(new Vector3(-inp.mouse.y, 0, 0));//Rotate Vertical
-			float rawX = camera.transform.localEulerAngles.x;
-			if(camera.transform.localEulerAngles.z>90)
+
+			if(control is PlayerControl)
 			{
-				camera.transform.Rotate(new Vector3(0, 180, 0), Space.World);
-				camera.transform.Rotate(new Vector3(0, 0, 180));
-				if(camera.transform.localEulerAngles.x < 180)
-					camera.transform.Rotate(90-camera.transform.localEulerAngles.x, 0, 0);
-				else
-					camera.transform.Rotate(270-camera.transform.localEulerAngles.x, 0, 0);
+				camera.transform.Rotate(new Vector3(0, inp.mouse.x, 0), Space.World);//Rotate Horizontal
+				float preY = camera.transform.localEulerAngles.y;
+				camera.transform.Rotate(new Vector3(-inp.mouse.y, 0, 0));//Rotate Vertical
+				float rawX = camera.transform.localEulerAngles.x;
+				if(camera.transform.localEulerAngles.z>90)
+				{
+					camera.transform.Rotate(new Vector3(0, 180, 0), Space.World);
+					camera.transform.Rotate(new Vector3(0, 0, 180));
+					if(camera.transform.localEulerAngles.x < 180)
+						camera.transform.Rotate(90-camera.transform.localEulerAngles.x, 0, 0);
+					else
+						camera.transform.Rotate(270-camera.transform.localEulerAngles.x, 0, 0);
+				}
+
+				Camera.main.transform.position = camera.transform.position;
+				Camera.main.transform.rotation = camera.transform.rotation;
 			}
+			//transform.Rotate(new Vector3(0,camera.transform.rotation.eulerAngles.y,0));
+
 			//player.transform.RotateAround(player.transform.position, Vector3.up, camera.transform.localRotation.eulerAngles.y);
 			//camera.transform.RotateAround(camera.transform.position, Vector3.up, -camera.transform.localRotation.eulerAngles.y);
 			Debug.DrawRay(camera.transform.position, camera.transform.forward, Color.blue);
 
-			if(inp.mouseL)
+			fireCooldown -= Time.deltaTime;
+			if(inp.mouseL && fireCooldown<=0f)
 			{
+				fireCooldown = fireDelay;
 				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
 				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team);
 
@@ -141,7 +156,7 @@ public class FPControl : MonoBehaviour {
 		}
 
 		Controller.input inp;
-		if(cursorEngaged)
+		if(cursorEngaged || !(control is PlayerControl))
 		{
 			inp = control.GetInput();
 
@@ -168,7 +183,7 @@ public class FPControl : MonoBehaviour {
 			onGround = true;
 
 			Vector3 horizMove = new Vector3(physics.velocity.x, 0f, physics.velocity.z);//X & Z movement
-			Vector3 moveVec = Quaternion.Euler(0,camera.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y);
+			Vector3 moveVec = Quaternion.Euler(0,camera.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y).normalized;
 			moveVec*=crouchFactor;//The more crouched (max at time of writing: 0.5f), the slower
 
 			if(moveVec != Vector3.zero)
