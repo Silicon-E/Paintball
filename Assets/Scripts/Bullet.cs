@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public class Bullet : MonoBehaviour {
 	public LineRenderer line;
+	private Controller control;
 
 	//TODO: do these need to be static?
 	static float mark2 = 0.1f;//Time to fire second raycast
@@ -15,6 +16,9 @@ public class Bullet : MonoBehaviour {
 	static float range2 = 8f;//Range of second raycast
 	float rangeFinal = 100f;//Max range
 	private float speed;
+
+	static float ragdollImpulse = 5f;
+
 	private Image hitIndicator;
 
 	Vector3 origin;//Camera where fired
@@ -30,8 +34,10 @@ public class Bullet : MonoBehaviour {
 		
 	}
 
-	public void Init(Vector3 o, Vector3 d, int team, Image h)
+	public void Init(Controller c, Vector3 o, Vector3 d, int team, Image h)
 	{
+		control = c;
+
 		origin = o;
 		direction = d;
 
@@ -106,7 +112,19 @@ public class Bullet : MonoBehaviour {
 			}
 			if(fp.Damage(10, -direction))//TODO: replace with deliberated damage system
 			{
-				//TODO: returns true if damage was lethal
+				if(control is AIControl) ((AIControl)control).shouldChase = false;
+				for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
+				{
+					foreach(Collider c in Physics.OverlapSphere(hit.point, r))
+					{
+						if(c.gameObject.layer == LayerMask.NameToLayer("Ragdoll"))
+						{
+							c.gameObject.GetComponent<Rigidbody>().AddForceAtPosition(direction*ragdollImpulse, hit.point, ForceMode.Impulse);
+							break;
+						}
+					}
+				}
+				//TODO: if damage was lethal
 			}
 			return true;
 		}else return false;

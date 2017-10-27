@@ -30,6 +30,7 @@ public class AIControl : Controller {
 	static Vector3 nullVec = new Vector3(19862252, 14442670, 37577711);
 	static float checkDelay = 1f;//Interval to check line-of-sight to target
 	private float checkCooldown;
+	[HideInInspector]public bool shouldChase = true;
 
 	List<Priority> movePris = new List<Priority>();
 	List<Priority> lookPris = new List<Priority>();
@@ -41,7 +42,7 @@ public class AIControl : Controller {
 		Quaternion preRot = fp.camera.transform.rotation;
 
 		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camera.transform.position));
-		velOffset *= (noise.x+1)*0.5f;//Essentially a random float from 0 to 1 that is the same for each shot
+		velOffset *= (noise.x+0)*1f;//Essentially a random float from 0 to 1 that is the same for each shot
 		Vector3 aimPos = target.transform.position + velOffset;
 
 		fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camera.transform.position), degPerSec*Time.deltaTime*noiseMulti);
@@ -90,7 +91,7 @@ public class AIControl : Controller {
 		return false;
 	}
 	bool moveToSquad(ref input inp)//NOTE: also used to make squads move by moving their squad pos
-	{
+	{return false;//TODO: remove when implemented
 		//TODO: if too far from squad pos, go towards
 		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * agent.desiredVelocity;
 		inp.move = new Vector2(moveVec.x, moveVec.z);
@@ -101,7 +102,7 @@ public class AIControl : Controller {
 		//TODO: if mode is not "kill things" AND is too far from squad pos
 			//return false;
 
-		if(chasePos==null || chasePos==nullVec) return false;
+		if(chasePos==null || chasePos==nullVec || target!=null) return false;
 
 		if(Vector3.Distance(fp.transform.position, chasePos) <= 0.5f)//If within 0.5m of chasePos
 		{
@@ -218,7 +219,8 @@ public class AIControl : Controller {
 	{
 		if(newTarget==null && target!=null)
 		{
-			chasePos = target.transform.position;
+			if(shouldChase) chasePos = target.transform.position;
+			else shouldChase = true;//shouldChase being false is a 1-time ticket to not chase. Used to keep AIs from chasing players they just killed.
 			noiseMulti = 1f;
 		}
 		target = newTarget;

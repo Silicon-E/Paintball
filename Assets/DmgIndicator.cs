@@ -29,6 +29,8 @@ public class DmgIndicator : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
+		if(cam==null) return;//If cam object has been destroyed (probably player dying)
+
 		//List<Vector2> dispDirs;
 		for(int i=0; i<ticks.GetLength(0); i++)
 		{

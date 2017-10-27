@@ -63,7 +63,7 @@ public class FPControl : MonoBehaviour {
 			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
 				r.velocity = physics.velocity;
 			//TODO: When models are finished, set ragdoll pose
-			Destroy(gameObject);//Destroy on next frame
+			Destroy(player);//Destroy on next frame
 			return true;
 		}else
 		{
@@ -73,7 +73,7 @@ public class FPControl : MonoBehaviour {
 	}
 
 	void Update ()
-	{
+	{Debug.Log(health);
 		if(Input.GetKeyUp(KeyCode.Escape))
 		{
 			cursorEngaged = false;
@@ -137,7 +137,7 @@ public class FPControl : MonoBehaviour {
 			{
 				fireCooldown = fireDelay;
 				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
-				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team, hitIndicator);
+				newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator);
 
 				/*Debug.Log("Bang");
 				RaycastHit hit;

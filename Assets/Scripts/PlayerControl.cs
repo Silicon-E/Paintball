@@ -9,7 +9,7 @@ public class PlayerControl : Controller {
 
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
-	static float lerpCamSpeed = 10f; 
+	static float lerpCamSpeed = 2f; 
 
 	public override input GetInput()
 	{
@@ -39,8 +39,8 @@ public class PlayerControl : Controller {
 	{
 		if(ragdoll!=null)
 		{
-			Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.LookRotation(ragdoll.position-Camera.main.transform.position), Time.deltaTime);
-			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, ragdoll.position + lerpCamPos, Time.deltaTime);
+			Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.LookRotation(ragdoll.position-Camera.main.transform.position), Time.deltaTime*lerpCamSpeed);
+			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, ragdoll.position + lerpCamPos, Time.deltaTime*lerpCamSpeed);
 		}
 	}
 }
