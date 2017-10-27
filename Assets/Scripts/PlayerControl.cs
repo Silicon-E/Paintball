@@ -5,6 +5,11 @@ using UnityEngine;
 public class PlayerControl : Controller {
 
 	public float mouseMulti;
+	public Canvas HUDCanvas;
+
+	[HideInInspector]public Transform ragdoll;
+	[HideInInspector]public Vector3 lerpCamPos;
+	static float lerpCamSpeed = 10f; 
 
 	public override input GetInput()
 	{
@@ -25,8 +30,17 @@ public class PlayerControl : Controller {
 		i.mouse = new Vector2(Input.GetAxis("Mouse X")*mouseMulti, Input.GetAxis("Mouse Y")*mouseMulti);
 		i.jump = Input.GetKey(KeyCode.Space);
 		i.crouch = Input.GetKey(KeyCode.LeftShift);
-		i.mouseL = Input.GetMouseButtonDown(0);
+		i.mouseL = Input.GetMouseButton(0);//Previously MouseButtonDown; with firing cooldown, this now unneeded
 
 		return i;
+	}
+
+	void Update()
+	{
+		if(ragdoll!=null)
+		{
+			Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.LookRotation(ragdoll.position-Camera.main.transform.position), Time.deltaTime);
+			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, ragdoll.position + lerpCamPos, Time.deltaTime);
+		}
 	}
 }

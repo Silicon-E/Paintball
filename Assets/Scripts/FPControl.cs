@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.UI;
 
 public class FPControl : MonoBehaviour {
 
@@ -18,9 +19,11 @@ public class FPControl : MonoBehaviour {
 	public GameObject camera;
 	public float camHeight;
 	public LayerMask onGroundMask;
+	public GameObject ragdollPrefab;
 	public GameObject bulletPrefab;
 	public float fireDelay;
-	public DmgIndicator indicator;
+	public DmgIndicator dmgIndicator;
+	public Image hitIndicator;
 
 	//[HideInInspector]
 	public int team;
@@ -47,14 +50,26 @@ public class FPControl : MonoBehaviour {
 	public bool Damage(int amount, Vector3 dir)//Called to damage this controller
 	{
 		health-=amount;//TODO: replace with deliberated damage system
-		if(indicator!=null) indicator.Add(dir);
+		if(dmgIndicator!=null) dmgIndicator.Add(dir);
 		if(health<=0)
 		{
-			//TODO: spawn ragdoll
+			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
+			if(control is PlayerControl)
+			{
+				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
+				((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f;
+				((PlayerControl)control).HUDCanvas.enabled = false;
+			}
+			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
+				r.velocity = physics.velocity;
+			//TODO: When models are finished, set ragdoll pose
 			Destroy(gameObject);//Destroy on next frame
 			return true;
+		}else
+		{
+			if(control is AIControl) ((AIControl)control).TookDamage(dir);
+			return false;
 		}
-		else return false;
 	}
 
 	void Update ()
@@ -104,18 +119,25 @@ public class FPControl : MonoBehaviour {
 				Camera.main.transform.position = camera.transform.position;
 				Camera.main.transform.rotation = camera.transform.rotation;
 			}
-			//transform.Rotate(new Vector3(0,camera.transform.rotation.eulerAngles.y,0));
+			camera.transform.parent = null;
+			transform.Rotate(new Vector3(0,camera.transform.rotation.eulerAngles.y - player.transform.rotation.eulerAngles.y,0));
+			camera.transform.parent = player.transform;
 
 			//player.transform.RotateAround(player.transform.position, Vector3.up, camera.transform.localRotation.eulerAngles.y);
 			//camera.transform.RotateAround(camera.transform.position, Vector3.up, -camera.transform.localRotation.eulerAngles.y);
 			Debug.DrawRay(camera.transform.position, camera.transform.forward, Color.blue);
 
 			fireCooldown -= Time.deltaTime;
+			if(hitIndicator!=null)
+			{
+				Color c = hitIndicator.color; c.a -= 2f*Time.deltaTime;
+				hitIndicator.color = c;
+			}
 			if(inp.mouseL && fireCooldown<=0f)
 			{
 				fireCooldown = fireDelay;
 				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
-				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team);
+				newBullet.GetComponent<Bullet>().Init(camera.transform.position, camera.transform.forward, team, hitIndicator);
 
 				/*Debug.Log("Bang");
 				RaycastHit hit;

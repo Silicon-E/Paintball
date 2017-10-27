@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Collections.Specialized;
 using UnityEditor;
+using UnityEngine.UI;
 
 public class Bullet : MonoBehaviour {
 	public LineRenderer line;
@@ -14,6 +15,7 @@ public class Bullet : MonoBehaviour {
 	static float range2 = 8f;//Range of second raycast
 	float rangeFinal = 100f;//Max range
 	private float speed;
+	private Image hitIndicator;
 
 	Vector3 origin;//Camera where fired
 	Vector3 direction;//Direction fired
@@ -28,7 +30,7 @@ public class Bullet : MonoBehaviour {
 		
 	}
 
-	public void Init(Vector3 o, Vector3 d, int team)
+	public void Init(Vector3 o, Vector3 d, int team, Image h)
 	{
 		origin = o;
 		direction = d;
@@ -37,6 +39,8 @@ public class Bullet : MonoBehaviour {
 
 		start = transform.position;//Start at spawn location
 		speed = range1 / mark2;//Meters per second
+
+		hitIndicator = h;
 	}
 	
 	// Update is called once per frame
@@ -66,11 +70,14 @@ public class Bullet : MonoBehaviour {
 		{
 			if(Physics.Raycast(origin, direction, out hit, rangeFinal))
 			{
-				RayHit(hit);
+				bool hitEnemy = RayHit(hit);
 				//Speed up to hit target, modify start and range to keep look consistent (since position is calculated independently of prev position)
-				speed = ((end-start).magnitude -range2) / (markFinal-mark2);
-				start -= (end-start).normalized * speed*mark2;
-				rangeFinal += speed*mark2;
+				if(hit.distance > speed*(markFinal+mark2) && hitEnemy)
+				{
+					speed = ((end-start).magnitude -range2) / mark2;
+					start -= (end-start).normalized * (speed*markFinal - range2);
+					rangeFinal = Vector3.Distance(start,end);// *= speed*mark2;
+				}
 			}
 		}
 		prevCount = count;
@@ -84,7 +91,7 @@ public class Bullet : MonoBehaviour {
 		//Debug.DrawRay(end, Vector3.up, Color.cyan);
 	}
 
-	private void RayHit(RaycastHit hit)
+	private bool RayHit(RaycastHit hit)//Returns true if hit an enemy
 	{
 		end = hit.point;
 		rangeFinal = hit.distance;
@@ -92,11 +99,17 @@ public class Bullet : MonoBehaviour {
 		FPControl fp = hit.collider.gameObject.GetComponent<FPControl>();
 		if(fp!=null)
 		{
+			if(hitIndicator!=null)
+			{
+				Color c = hitIndicator.color; c.a = 1f;
+				hitIndicator.color = c;
+			}
 			if(fp.Damage(10, -direction))//TODO: replace with deliberated damage system
 			{
 				//TODO: returns true if damage was lethal
 			}
-		}
+			return true;
+		}else return false;
 	}
 
 	public static float DistToDelay(float dist)//Return delay of bullet at a given range
