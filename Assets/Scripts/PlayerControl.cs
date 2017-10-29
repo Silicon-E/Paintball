@@ -4,8 +4,10 @@ using UnityEngine;
 
 public class PlayerControl : Controller {
 
+	public FPControl player;
 	public float mouseMulti;
 	public Canvas HUDCanvas;
+	public Camera minimapCamera;
 
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
@@ -41,6 +43,13 @@ public class PlayerControl : Controller {
 		{
 			Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.LookRotation(ragdoll.position-Camera.main.transform.position), Time.deltaTime*lerpCamSpeed);
 			Camera.main.transform.position = Vector3.Lerp(Camera.main.transform.position, ragdoll.position + lerpCamPos, Time.deltaTime*lerpCamSpeed);
+		}
+
+		if(player!=null)
+		{
+			Vector3 mmVec = player.transform.position;
+			mmVec.y = minimapCamera.transform.position.y;
+			minimapCamera.transform.position = mmVec;
 		}
 	}
 }

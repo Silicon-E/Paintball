@@ -20,6 +20,7 @@ public class FPControl : MonoBehaviour {
 	public float camHeight;
 	public LayerMask onGroundMask;
 	public GameObject ragdollPrefab;
+	public GameObject miniXPrefab;
 	public GameObject bulletPrefab;
 	public float fireDelay;
 	public DmgIndicator dmgIndicator;
@@ -54,10 +55,12 @@ public class FPControl : MonoBehaviour {
 		if(health<=0)
 		{
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
+			GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, Quaternion.identity);
+			miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
 			if(control is PlayerControl)
 			{
 				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
-				((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f;
+				((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f + Vector3.up;
 				((PlayerControl)control).HUDCanvas.enabled = false;
 			}
 			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
