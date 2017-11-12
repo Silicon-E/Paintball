@@ -8,6 +8,7 @@ using UnityEngine.UI;
 public class Bullet : MonoBehaviour {
 	public LineRenderer line;
 	private Controller control;
+	//public LayerMask[] teamMasks;
 
 	//TODO: do these need to be static?
 	static float mark2 = 0.1f;//Time to fire second raycast
@@ -28,6 +29,7 @@ public class Bullet : MonoBehaviour {
 	Vector3 end;//Location bullet is going towards
 	float count = 0f;
 	float prevCount = 0f;
+	LayerMask hitMask;
 
 	// Use this for initialization
 	void Start () {
@@ -47,6 +49,8 @@ public class Bullet : MonoBehaviour {
 		speed = range1 / mark2;//Meters per second
 
 		hitIndicator = h;
+
+		hitMask = Manager.losMasks[team];//teamMasks[team];
 	}
 	
 	// Update is called once per frame
@@ -59,22 +63,22 @@ public class Bullet : MonoBehaviour {
 		RaycastHit hit;
 		if(prevCount==0f)
 		{
-			if(Physics.Raycast(origin, direction, out hit, range1))
+			if(Physics.Raycast(origin, direction, out hit, range1, hitMask))
 			{
 				RayHit(hit);
-			}else if(Physics.Raycast(origin, direction, out hit, rangeFinal))//If no raycast hit at first, set end to max-range hit
+			}else if(Physics.Raycast(origin, direction, out hit, rangeFinal, hitMask))//If no raycast hit at first, set end to max-range hit
 				end = hit.point;
 			else//If still no raycast hit, set end to max range
 				end = origin + direction*rangeFinal;
 		}else if(prevCount<mark2 && count>=mark2)
 		{
-			if(Physics.Raycast(origin, direction, out hit, range2))
+			if(Physics.Raycast(origin, direction, out hit, range2, hitMask))
 			{
 				RayHit(hit);
 			}
 		}else if(prevCount<markFinal && count>=markFinal)
 		{
-			if(Physics.Raycast(origin, direction, out hit, rangeFinal))
+			if(Physics.Raycast(origin, direction, out hit, rangeFinal, hitMask))
 			{
 				bool hitEnemy = RayHit(hit);
 				//Speed up to hit target, modify start and range to keep look consistent (since position is calculated independently of prev position)

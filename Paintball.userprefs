@@ -1,17 +1,19 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\AIControl.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Manager.cs">
     <Files>
-      <File FileName="Assets\Scripts\PlayerControl.cs" Line="28" Column="107" />
-      <File FileName="Assets\Scripts\FPControl.cs" Line="59" Column="28" />
-      <File FileName="Assets\Scripts\Bullet.cs" Line="75" Column="33" />
-      <File FileName="Assets\Scripts\AIControl.cs" Line="59" Column="4" />
-      <File FileName="Assets\DmgIndicator.cs" Line="41" Column="7" />
+      <File FileName="Assets\Scripts\PlayerControl.cs" Line="19" Column="29" />
+      <File FileName="Assets\Scripts\FPControl.cs" Line="58" Column="116" />
+      <File FileName="Assets\Scripts\Bullet.cs" Line="52" Column="35" />
+      <File FileName="Assets\Scripts\AIControl.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Manager.cs" Line="13" Column="57" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
     <BreakpointStore>
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\FPControl.cs" line="191" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\FPControl.cs" line="208" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\FPControl.cs" line="73" column="49" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\AIControl.cs" line="60" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

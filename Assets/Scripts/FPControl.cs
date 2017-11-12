@@ -28,6 +28,8 @@ public class FPControl : MonoBehaviour {
 
 	//[HideInInspector]
 	public int team;
+	//[HideInInspector]
+	public Squad squad;
 
 	[HideInInspector]public float fireCooldown = 0f;
 	private bool cursorEngaged = true;
@@ -55,7 +57,7 @@ public class FPControl : MonoBehaviour {
 		if(health<=0)
 		{
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
-			GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, Quaternion.identity);
+			GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
 			miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
 			if(control is PlayerControl)
 			{

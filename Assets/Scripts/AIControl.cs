@@ -14,6 +14,8 @@ public class AIControl : Controller {
 	public FPControl fp;
 	public Collider frustum;
 	static float degPerSec = 180;
+	static float moveRadius = 5;// Max distance from squad pos at which AI will stop going
+	static float chaseRadius = 10;//Distance from squad pos that AI will chase enemy
 	//static float distPerDeg = 4f/45f;//NoiseMulti bonus per degrees of mouse movement
 	public NavMeshAgent agent;
 	public GameObject target;
@@ -71,9 +73,9 @@ public class AIControl : Controller {
 	}
 	bool lookIdle(ref input inp)//Look in moving direction
 	{
-		System.Random rand = new System.Random((int)(Time.time*0.5f));//Same seed from each 2-second interval
+		System.Random rand = new System.Random((int)((Time.time +gameObject.GetInstanceID())*0.5f));//Same seed from each 2-second interval
 
-		if(rand.Next(1,1)==1)//each interval has a 1/4 chance of looking TODO: make it 1/[peeps_in_squad]
+		if(rand.Next(1,fp.squad.members.Count)==1)//each interval has a 1/4 chance of looking TODO: make it 1/[peeps_in_squad]
 			fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation(new Vector3((float)(rand.NextDouble())*2f-1f, ((float)(rand.NextDouble())*2f-1f)*0.5f, (float)(rand.NextDouble())*2f-1f)), degPerSec*Time.deltaTime*noiseMulti);
 		else
 			fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation(fp.physics.velocity), degPerSec*Time.deltaTime*noiseMulti);
@@ -91,18 +93,28 @@ public class AIControl : Controller {
 		return false;
 	}
 	bool moveToSquad(ref input inp)//NOTE: also used to make squads move by moving their squad pos
-	{return false;//TODO: remove when implemented
-		//TODO: if too far from squad pos, go towards
+	{//no NPE protection; all units should belong to a squad.
+		//if too far from squad pos, go towards
+		float radius;
+		if( (chasePos!=null && chasePos!=nullVec) || target!=null)//If targeting or chasing
+			radius = chaseRadius;
+		else
+			radius = (float)new System.Random(gameObject.GetInstanceID()).NextDouble()*moveRadius;
+		Debug.Log(fp.team+": "+radius);
+		if(Vector3.Distance(fp.player.transform.position+Vector3.down, fp.squad.transform.position) < radius)
+			return false;
+		
+		agent.destination = fp.squad.transform.position;
 		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * agent.desiredVelocity;
 		inp.move = new Vector2(moveVec.x, moveVec.z);
-		return false;
+		return true;
 	}
 	bool moveChase(ref input inp)
 	{
-		//TODO: if mode is not "kill things" AND is too far from squad pos
+		//TODO: if mode is not "kill things" AND chase pos is too far from squad pos
 			//return false;
 
-		if(chasePos==null || chasePos==nullVec || target!=null) return false;
+		if(chasePos==null || chasePos==nullVec || target!=null) return false;//If targeting or not chasing
 
 		if(Vector3.Distance(fp.transform.position, chasePos) <= 0.5f)//If within 0.5m of chasePos
 		{
@@ -138,7 +150,7 @@ public class AIControl : Controller {
 	{
 		if(target==null) return false;
 
-		System.Random rand = new System.Random((int)(Time.time));//Same seed from each 1-second interval
+		System.Random rand = new System.Random((int)(Time.time +gameObject.GetInstanceID() ));//Same seed from each 1-second interval
 		inp.move.x = (rand.Next(0,2)-0.5f)*2f;
 		return true;
 	}
@@ -178,7 +190,7 @@ public class AIControl : Controller {
 	private bool CheckLOS()//will NPE if target is not set; if NPE occurrs, set target before calling.
 	{
 		RaycastHit hit;
-		if(Physics.Raycast(fp.camera.transform.position, (target.transform.position-fp.camera.transform.position), out hit, 128))
+		if(Physics.Raycast(fp.camera.transform.position, (target.transform.position-fp.camera.transform.position), out hit, 128, Manager.losMasks[fp.team]))
 		{
 			if(hit.collider.gameObject == target)
 				return true;
