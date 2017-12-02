@@ -66,7 +66,7 @@ public class PlayerControl : Controller {
 	{
 		if(Input.GetKeyDown(KeyCode.Tab) && !paused)//Can't tab in/out while paused
 			commandMode = !commandMode;
-		if(Input.GetKeyUp(KeyCode.Q))
+		if(Input.GetKeyDown(KeyCode.Escape))
 			paused = !paused;
 		
 		if(commandMode || paused)
