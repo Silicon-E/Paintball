@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
+using UnityEngine.UI;
 
 public class PlayerControl : Controller {
 
@@ -21,9 +23,22 @@ public class PlayerControl : Controller {
 
 	private int squadInd = 0;
 	private int numSquads = 0;
+	private bool cursorEngaged = true;
+	private bool paused = false;
+
+	public Button newSqButton;
+	public Image pauseDarken;
+
+	void Awake()
+	{
+		newSqButton.onClick.AddListener(NewSquad);
+	}
 
 	public override input GetInput()
 	{
+		if(!cursorEngaged)
+			return new input();
+
 		input i = new input();
 		if(commandMode) return i;
 
@@ -49,6 +64,24 @@ public class PlayerControl : Controller {
 
 	void Update()
 	{
+		if(Input.GetKeyDown(KeyCode.Tab) && !paused)//Can't tab in/out while paused
+			commandMode = !commandMode;
+		if(Input.GetKeyUp(KeyCode.Q))
+			paused = !paused;
+		
+		if(commandMode || paused)
+			cursorEngaged = false;
+		else cursorEngaged = true;
+		Cursor.visible = !cursorEngaged;
+		Cursor.lockState = cursorEngaged ?CursorLockMode.Locked :CursorLockMode.None;    Debug.Log(paused+", "+ Cursor.lockState);
+
+		if(paused)
+		{
+			pauseDarken.enabled = true;
+			//TODO: pause menu logic
+		}else
+			pauseDarken.enabled = false;
+
 		if(ragdoll!=null)
 		{
 			Camera.main.transform.rotation = Quaternion.Lerp(Camera.main.transform.rotation, Quaternion.LookRotation(ragdoll.position-Camera.main.transform.position), Time.deltaTime*lerpCamSpeed);
@@ -85,8 +118,10 @@ public class PlayerControl : Controller {
 
 		//minimapMask.localScale = Vector3.one * ( commandLerp*(Mathf.Max(Screen.width, Screen.height)-200)/200 +1);//   /HUDCanvas.referencePixelsPerUnit
 		minimapCamera.orthographicSize = 15*Mathf.Max(minimapMask.localScale.x, minimapMask.localScale.y);
+	}
 
-		if(Input.GetKeyDown(KeyCode.Tab))
-			commandMode = !commandMode;
+	void NewSquad()
+	{
+		Debug.Log("click");
 	}
 }

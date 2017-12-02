@@ -44,7 +44,7 @@ public class AIControl : Controller {
 		Quaternion preRot = fp.camera.transform.rotation;
 
 		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camera.transform.position));
-		velOffset *= (noise.x+0)*1f;//Essentially a random float from 0 to 1 that is the same for each shot
+		velOffset *= (Mathf.Abs(noise.x)+0)*4f;//Essentially a random float from 0 to 4 that is the same for each shot
 		Vector3 aimPos = target.transform.position + velOffset;
 
 		fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camera.transform.position), degPerSec*Time.deltaTime*noiseMulti);

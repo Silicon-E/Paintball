@@ -32,15 +32,15 @@ public class FPControl : MonoBehaviour {
 	public Squad squad;
 
 	[HideInInspector]public float fireCooldown = 0f;
-	private bool cursorEngaged = true;
+	//private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
 	private int health = 100;//TODO: raplace with deliberated helath system
 
 	void Start ()
 	{
-		Cursor.lockState = CursorLockMode.Locked;
-		Cursor.visible = false;
+		//Cursor.lockState = CursorLockMode.Locked;
+		//Cursor.visible = false;
 	}
 
 	public void Init(GameObject p, Rigidbody r, Collider c, int n)
@@ -78,17 +78,8 @@ public class FPControl : MonoBehaviour {
 	}
 
 	void Update ()
-	{Debug.Log(health);
-		if(Input.GetKeyUp(KeyCode.Escape))
-		{
-			cursorEngaged = false;
-		}
-		else if(Input.GetMouseButtonUp(0))
-		{
-			cursorEngaged = true;
-		}
-		Cursor.visible = !cursorEngaged;
-		Cursor.lockState = cursorEngaged ?CursorLockMode.Locked :CursorLockMode.None;
+	{//Debug.Log(health);
+		
 
 
 
@@ -99,9 +90,9 @@ public class FPControl : MonoBehaviour {
 
 
 
-		if(cursorEngaged || !(control is PlayerControl))
-		{
-			Cursor.lockState = CursorLockMode.Locked;
+		//if(cursorEngaged || !(control is PlayerControl))
+		//{
+			//Cursor.lockState = CursorLockMode.Locked;
 
 			Controller.input inp = control.GetInput();
 
@@ -166,8 +157,8 @@ public class FPControl : MonoBehaviour {
 				}*/
 			}
 
-		}else
-			Cursor.lockState = CursorLockMode.None;
+		//}else
+		//	Cursor.lockState = CursorLockMode.None;
 		camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
 	}
 
@@ -183,14 +174,14 @@ public class FPControl : MonoBehaviour {
 		}
 
 		Controller.input inp;
-		if(cursorEngaged || !(control is PlayerControl))
-		{
+		//if(cursorEngaged || !(control is PlayerControl))
+		//{
 			inp = control.GetInput();
 
 
 			//                 position                                          halfextents                           direction     rotation        maxDist  layerMask
 
-		}else //end of if engaged
+		/*}else //end of if engaged
 		{
 			inp = new Controller.input();//Neutral controls
 			inp.move = Vector2.zero;
@@ -201,7 +192,8 @@ public class FPControl : MonoBehaviour {
 
 			//collider.material.staticFriction = 0.5f; Taken care of below
 			//collider.material.dynamicFriction = 0.5f;
-		}
+		}*/
+
 		//Whether engaged or not
 		RaycastHit hit;
 		Debug.DrawRay(player.transform.position+new Vector3(0,(1-crouchFactor)*height*0.5f,0), Vector3.down*(height*crouchFactor*0.5f +0.01f), Color.red);
