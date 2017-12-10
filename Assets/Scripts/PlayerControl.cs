@@ -13,6 +13,7 @@ public class PlayerControl : Controller {
 	public RectTransform minimapMask;
 	public RectTransform minimapImage;
 	public RectTransform minimapCanvas;
+	public GameObject squadPrefab;
 
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
@@ -23,13 +24,15 @@ public class PlayerControl : Controller {
 
 	private int squadInd = 0;
 	private int numSquads = 0;
+	private List<Squad> squads = new List<Squad>();
 	private bool cursorEngaged = true;
 	private bool paused = false;
+	private Squad sqPlacing = null;
 
 	public Button newSqButton;
 	public Image pauseDarken;
 
-	void Awake()
+	void Start()
 	{
 		newSqButton.onClick.AddListener(NewSquad);
 	}
@@ -80,7 +83,22 @@ public class PlayerControl : Controller {
 			pauseDarken.enabled = true;
 			//TODO: pause menu logic
 		}else
+		{
 			pauseDarken.enabled = false;
+			if(sqPlacing!=null)
+				sqPlacing.transform.position = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
+		}
+
+		if(commandMode)
+		{
+			if(Input.GetMouseButtonDown(0) && sqPlacing!=null)
+			{
+				sqPlacing = null;
+			}
+		}else
+		{
+			sqPlacing = null;
+		}
 
 		if(ragdoll!=null)
 		{
@@ -122,6 +140,36 @@ public class PlayerControl : Controller {
 
 	void NewSquad()
 	{
-		Debug.Log("click");
+		Vector3 spawnPos = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
+
+		GameObject newObj = GameObject.Instantiate(squadPrefab, spawnPos, squadPrefab.transform.rotation);
+		newObj.layer = squadPrefab.layer;
+
+		Squad newSq = newObj.GetComponent<Squad>();
+		sqPlacing = newSq;
+	}
+
+	private Vector3 mouseToWorld(/*Vector2 screen*/)
+	{
+		/*Vector3 mousePos;
+		mousePos.x = Input.mousePosition.x;
+		mousePos.y = minimapCamera.pixelHeight - Input.mousePosition.y;
+		mousePos.z = minimapCamera.nearClipPlane;
+		Vector3 spawnPos = minimapCamera.ScreenToWorldPoint(mousePos);
+		spawnPos.Scale(new Vector3(1,0,1));
+		return spawnPos;*/
+
+		Vector2 multi = new Vector2(Mathf.Min(1, Screen.width/(float)Screen.height),  Mathf.Min(1, Screen.height/(float)Screen.width));
+		return minimapCamera.transform.position + new Vector3(minimapCamera.orthographicSize*(Input.mousePosition.x/(float)Screen.width)*multi.x*2 - multi.x*minimapCamera.orthographicSize,
+			-minimapCamera.transform.position.y,
+			minimapCamera.orthographicSize*(Input.mousePosition.y/(float)Screen.height)*multi.y*2 - multi.y*minimapCamera.orthographicSize);
+		
+
+		/*Vector3 multi = new Vector3(Mathf.Min(1, Screen.width/(float)Screen.height),
+			0,
+			Mathf.Min(1, Screen.height/(float)Screen.width));
+		Vector3 pos = minimapCamera.ScreenToWorldPoint(Input.mousePosition);
+		//pos.Scale(multi);
+		return pos;*/
 	}
 }
