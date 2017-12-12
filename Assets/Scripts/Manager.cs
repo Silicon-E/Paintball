@@ -17,4 +17,6 @@ public class Manager
 	public static String[] teamLayers = {"Team0", "Team1"};
 
 	public static LayerMask[] losMasks = {LayerMask.GetMask(new string[]{"Terrain","Team 1"}), LayerMask.GetMask(new string[]{"Terrain","Team 0"})};
+
+	public static List<Squad> needMembers = new List<Squad>();
 }

@@ -13,6 +13,7 @@ public class PlayerControl : Controller {
 	public RectTransform minimapMask;
 	public RectTransform minimapImage;
 	public RectTransform minimapCanvas;
+	public GameObject commandStuff;
 	public GameObject squadPrefab;
 
 	[HideInInspector]public Transform ragdoll;
@@ -24,6 +25,7 @@ public class PlayerControl : Controller {
 
 	private int squadInd = 0;
 	private int numSquads = 0;
+	private int maxSquads;
 	private List<Squad> squads = new List<Squad>();
 	private bool cursorEngaged = true;
 	private bool paused = false;
@@ -34,6 +36,7 @@ public class PlayerControl : Controller {
 
 	void Start()
 	{
+		maxSquads = Squad.CODES.Length;
 		newSqButton.onClick.AddListener(NewSquad);
 	}
 
@@ -89,11 +92,32 @@ public class PlayerControl : Controller {
 				sqPlacing.transform.position = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
 		}
 
+		if(commandLerp==1)
+			commandStuff.SetActive(commandMode);
 		if(commandMode)
 		{
 			if(Input.GetMouseButtonDown(0) && sqPlacing!=null)
 			{
 				sqPlacing = null;
+			}
+			if(sqPlacing==null)
+			{
+				Squad pointingAt = null;
+				Debug.DrawRay(mouseToWorld(), Vector3.up, Color.black);
+				Collider[] founds = Physics.OverlapSphere(mouseToWorld(), 0.1f);//, LayerMask.NameToLayer("Minimap"));
+				foreach(Collider f in founds)
+				{
+					if(f.tag=="Squad")
+					{
+						pointingAt = f.GetComponent<Squad>();
+						break;
+					}
+				}//Debug.Log("pointingAt: "+pointingAt);
+				if(pointingAt!=null)
+				{Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
+					pointingAt.wantedMembers = Mathf.Clamp(pointingAt.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 0, 10);
+					pointingAt.UpdateMembers();
+				}
 			}
 		}else
 		{
@@ -140,6 +164,9 @@ public class PlayerControl : Controller {
 
 	void NewSquad()
 	{
+		if(numSquads >= maxSquads)
+			return;
+
 		Vector3 spawnPos = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
 
 		GameObject newObj = GameObject.Instantiate(squadPrefab, spawnPos, squadPrefab.transform.rotation);
@@ -147,6 +174,11 @@ public class PlayerControl : Controller {
 
 		Squad newSq = newObj.GetComponent<Squad>();
 		sqPlacing = newSq;
+
+		sqPlacing.nameInd = squadInd;
+		squadInd++;
+		numSquads++;
+		sqPlacing.UpdateName();
 	}
 
 	private Vector3 mouseToWorld(/*Vector2 screen*/)

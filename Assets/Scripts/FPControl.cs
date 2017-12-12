@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UI;
+using System;
+using System.ComponentModel.Design.Serialization;
+using System.Runtime.InteropServices;
 
 public class FPControl : MonoBehaviour {
 
@@ -29,7 +32,7 @@ public class FPControl : MonoBehaviour {
 	//[HideInInspector]
 	public int team;
 	//[HideInInspector]
-	public Squad squad;
+	public Squad squad = null;
 
 	[HideInInspector]public float fireCooldown = 0f;
 	//private bool cursorEngaged = true;
@@ -48,6 +51,27 @@ public class FPControl : MonoBehaviour {
 		player = p;
 		physics = r;
 		collider = c;
+	}
+
+	public void Assign(Squad newSq)
+	{
+		if(squad!=null)
+		{
+			Debug.LogError("Can't assign FPControl; already assigned");
+			return;
+		}
+		squad = newSq;
+		squad.members.Add(this);
+	}
+	public void Reassign(Squad newSq)
+	{
+		Unassign();
+		Assign(newSq);
+	}
+	private void Unassign()//Should only be called by Reassign()
+	{
+		squad.members.Remove(this);
+		squad = null;
 	}
 
 	public bool Damage(int amount, Vector3 dir)//Called to damage this controller
