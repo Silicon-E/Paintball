@@ -18,7 +18,7 @@ public class Squad : MonoBehaviour {
 
 	//[HideInInspector]
 	public List<FPControl> members;
-	[HideInInspector] public int wantedMembers = 0;
+	[HideInInspector] public int wantedMembers = 1;
 
 	[HideInInspector] public static string[] CODES = {"alpha","bravo","charlie","delta","echo","foxtrot","india","kilo","november","oscar","quebec","romeo","sierra","tango","victor","xray","yankee","zulu"};
 	static string[] ABBR = {"a","b","c","d","e","f","i","k","n","o","q","r","s","t","v","x","y","z"};

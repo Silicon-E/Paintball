@@ -115,7 +115,7 @@ public class PlayerControl : Controller {
 				}//Debug.Log("pointingAt: "+pointingAt);
 				if(pointingAt!=null)
 				{Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
-					pointingAt.wantedMembers = Mathf.Clamp(pointingAt.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 0, 10);
+					pointingAt.wantedMembers = Mathf.Clamp(pointingAt.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
 					pointingAt.UpdateMembers();
 				}
 			}
