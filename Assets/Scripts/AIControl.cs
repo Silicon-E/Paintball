@@ -100,7 +100,7 @@ public class AIControl : Controller {
 			radius = chaseRadius;
 		else
 			radius = (float)new System.Random(gameObject.GetInstanceID()).NextDouble()*moveRadius;
-		Debug.Log(fp.team+": "+radius);
+		//Debug.Log(fp.team+": "+radius);
 		if(Vector3.Distance(fp.player.transform.position+Vector3.down, fp.squad.transform.position) < radius)
 			return false;
 		
@@ -157,6 +157,12 @@ public class AIControl : Controller {
 
 	public void Awake()
 	{
+		/*if(!isLocalPlayer)
+		{
+			Destroy(this);//destroy this component
+			return;
+		}*/
+
 		chasePos = nullVec;
 		SetTarget(target);//To set targetPhysics if given pre-set target. Mostly for tetsing, but also a safety measure.
 
@@ -185,7 +191,7 @@ public class AIControl : Controller {
 			}
 			checkCooldown -= Time.deltaTime;
 		}
-		Debug.Log(target);
+		//Debug.Log(target);
 	}
 	private bool CheckLOS()//will NPE if target is not set; if NPE occurrs, set target before calling.
 	{

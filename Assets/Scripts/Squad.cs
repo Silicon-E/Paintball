@@ -7,11 +7,13 @@ public class Squad : MonoBehaviour {
 
 	public PlayerControl control;
 	public LineRenderer line;
+	public SpriteRenderer marker;
 	public Text label;
 	public Sprite[] dots;
 	public RectTransform dotsContainer;
 	public Image dotsWhite;
 	public Image dotsRed;
+	[HideInInspector] public bool highlighted = false;
 
 	//[HideInInspector]
 	public List<Waypoint> waypoints = new List<Waypoint>();
@@ -26,7 +28,14 @@ public class Squad : MonoBehaviour {
 	public int nameInd;
 
 	void Start () {
-		
+		foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
+		{
+			if(fp.isLocalPlayer)
+			{
+				fp.Assign(this);
+				this.transform.position = new Vector3(fp.transform.position.x, 0, fp.transform.position.z);
+			}
+		}
 	}
 
 	public void UpdateName()
@@ -98,7 +107,7 @@ public class Squad : MonoBehaviour {
 	}
 
 	void Update () {
-		Waypoint prevW = null;Debug.Log("mem:"+members.Count+" want:"+wantedMembers);
+		Waypoint prevW = null;
 		foreach(Waypoint w in waypoints)
 		{
 			if(prevW==null)
@@ -112,5 +121,13 @@ public class Squad : MonoBehaviour {
 			}
 			prevW = w;
 		}
+
+		if(highlighted)
+		{
+			marker.color = Manager.miniEmphasis;
+			highlighted = false;
+		}else
+			marker.color = Color.white;
+			
 	}
 }

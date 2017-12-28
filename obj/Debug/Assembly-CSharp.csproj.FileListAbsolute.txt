@@ -1,4 +1,3 @@
-C:\Users\seema\Documents\Unity\Paintball\obj\Debug\Assembly-CSharp.csprojResolveAssemblyReference.cache
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\Assembly-CSharp.dll
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\Assembly-CSharp.pdb
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\nunit.framework.dll
@@ -27,5 +26,6 @@ C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\nunit.framework.xml
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\UnityEngine.Analytics.xml
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\UnityEngine.HoloLens.xml
 C:\Users\seema\Documents\Unity\Paintball\Temp\bin\Debug\UnityEngine.VR.xml
+C:\Users\seema\Documents\Unity\Paintball\obj\Debug\Assembly-CSharp.csprojResolveAssemblyReference.cache
 C:\Users\seema\Documents\Unity\Paintball\obj\Debug\Assembly-CSharp.dll
 C:\Users\seema\Documents\Unity\Paintball\obj\Debug\Assembly-CSharp.pdb

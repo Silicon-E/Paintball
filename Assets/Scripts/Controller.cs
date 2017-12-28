@@ -1,8 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Networking;
 
-public abstract class Controller : MonoBehaviour {
+public abstract class Controller : NetworkBehaviour {
 
 	public struct input
 	{

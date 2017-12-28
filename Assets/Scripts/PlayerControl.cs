@@ -3,19 +3,26 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using UnityEngine.Networking;
 
 public class PlayerControl : Controller {
 
-	public FPControl player;
+	public FPControl player = null;
 	public float mouseMulti;
+	public GameObject squadPrefab;
+
 	public Canvas HUDCanvas;
+	public Image hitIndicator;
+	public DmgIndicator dmgIndicator;
 	public Camera minimapCamera;
 	public RectTransform minimapMask;
 	public RectTransform minimapImage;
 	public RectTransform minimapCanvas;
 	public GameObject commandStuff;
-	public GameObject squadPrefab;
+	public Button newSqButton;
+	public Image pauseDarken;
 
+	[HideInInspector]public int team = 0;
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
 	static float lerpCamSpeed = 2f; 
@@ -31,13 +38,34 @@ public class PlayerControl : Controller {
 	private bool paused = false;
 	private Squad sqPlacing = null;
 
-	public Button newSqButton;
-	public Image pauseDarken;
+	void Awake()
+	{
+		
+
+		//NetworkServer.SpawnWithClientAuthority(gameObject, connectionToClient);
+	}
 
 	void Start()
 	{
+		PlayerContValues vals = FindObjectOfType<PlayerContValues>();
+
+		HUDCanvas = vals.HUDCanvas;
+		hitIndicator = vals.hitIndicator;
+		dmgIndicator = vals.dmgIndicator;
+		minimapCamera = vals.minimapCamera;
+		minimapMask = vals.minimapMask;
+		minimapImage = vals.minimapImage;
+		minimapCanvas = vals.minimapCanvas;
+		commandStuff = vals.commandStuff;
+		newSqButton = vals.newSqButton;
+		pauseDarken = vals.pauseDarken;
 		maxSquads = Squad.CODES.Length;
 		newSqButton.onClick.AddListener(NewSquad);
+
+		if(isServer)
+			team = 0;
+		else
+			team = 1;
 	}
 
 	public override input GetInput()
@@ -70,8 +98,13 @@ public class PlayerControl : Controller {
 
 	void Update()
 	{
+		if(!isLocalPlayer)
+			return;
+
+
 		if(Input.GetKeyDown(KeyCode.Tab) && !paused)//Can't tab in/out while paused
-			commandMode = !commandMode;
+		if(player!=null || !commandMode) //If no player and in command mode, no tabbing out
+				commandMode = !commandMode;
 		if(Input.GetKeyDown(KeyCode.Escape))
 			paused = !paused;
 		
@@ -79,7 +112,7 @@ public class PlayerControl : Controller {
 			cursorEngaged = false;
 		else cursorEngaged = true;
 		Cursor.visible = !cursorEngaged;
-		Cursor.lockState = cursorEngaged ?CursorLockMode.Locked :CursorLockMode.None;    Debug.Log(paused+", "+ Cursor.lockState);
+		Cursor.lockState = cursorEngaged ?CursorLockMode.Locked :CursorLockMode.None;//    Debug.Log(paused+", "+ Cursor.lockState);
 
 		if(paused)
 		{
@@ -100,23 +133,54 @@ public class PlayerControl : Controller {
 			{
 				sqPlacing = null;
 			}
-			if(sqPlacing==null)
+			if(sqPlacing==null) //Can't do mouse interaction while placing a squad
 			{
-				Squad pointingAt = null;
+				FPControl pointingUnit = null;
+				Squad pointingSquad = null;
 				Debug.DrawRay(mouseToWorld(), Vector3.up, Color.black);
-				Collider[] founds = Physics.OverlapSphere(mouseToWorld(), 0.1f);//, LayerMask.NameToLayer("Minimap"));
+				Collider[] founds = Physics.OverlapSphere(mouseToWorld(), 0.1f);
 				foreach(Collider f in founds)
 				{
 					if(f.tag=="Squad")
 					{
-						pointingAt = f.GetComponent<Squad>();
+						pointingSquad = f.GetComponent<Squad>();
+						pointingSquad.highlighted = true;
+					}else if(f.tag=="Unit Select"/*  &&  f.GetComponentInParent<FPControl>()!=null*/)
+					{
+						if(Input.GetMouseButtonDown(0) && f.GetComponentInParent<FPControl>().team==team)
+						{
+							pointingUnit = f.GetComponentInParent<FPControl>();
+						}
+
 						break;
 					}
-				}//Debug.Log("pointingAt: "+pointingAt);
-				if(pointingAt!=null)
-				{Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
-					pointingAt.wantedMembers = Mathf.Clamp(pointingAt.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
-					pointingAt.UpdateMembers();
+				}//Debug.Log("pointingSquad: "+pointingSquad);
+				if(pointingSquad != null)
+				{//Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
+					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
+					pointingSquad.UpdateMembers();
+				}
+				if(pointingUnit != null)
+				{
+					if(player!=null)
+					{
+						player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
+						player.hitIndicator = null;
+						player.dmgIndicator = null;
+					}
+					if(!isServer)//Server value is taken care of in the command
+					{
+						player = pointingUnit;
+						player.control = this;
+						player.hitIndicator = hitIndicator;
+						player.dmgIndicator = dmgIndicator;
+					}
+					//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
+					//	Debug.Log("switched");
+					HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
+
+					//NetworkServer.ReplacePlayerForConnection(connectionToClient, f.gameObject, playerControllerId);
+					CmdReplacePlayer(pointingUnit.netId);
 				}
 			}
 		}else
@@ -160,6 +224,27 @@ public class PlayerControl : Controller {
 
 		//minimapMask.localScale = Vector3.one * ( commandLerp*(Mathf.Max(Screen.width, Screen.height)-200)/200 +1);//   /HUDCanvas.referencePixelsPerUnit
 		minimapCamera.orthographicSize = 15*Mathf.Max(minimapMask.localScale.x, minimapMask.localScale.y);
+	}
+
+	[Command]
+	void CmdReplacePlayer(NetworkInstanceId netId)
+	{Debug.Log("Replace Player Command");
+
+		if(player!=null)
+			player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
+
+		GameObject obj = NetworkServer.FindLocalObject(netId);
+		player = obj.GetComponent<FPControl>();
+
+		//NetworkServer.ReplacePlayerForConnection(connectionToClient, obj, playerControllerId);
+		obj.GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);
+		obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
+
+		//Set values in 'player' for the host
+		player.control = this;
+		player.hitIndicator = hitIndicator;
+		player.dmgIndicator = dmgIndicator;
+
 	}
 
 	void NewSquad()

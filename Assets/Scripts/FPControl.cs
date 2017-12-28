@@ -6,11 +6,15 @@ using UnityEngine.UI;
 using System;
 using System.ComponentModel.Design.Serialization;
 using System.Runtime.InteropServices;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
-public class FPControl : MonoBehaviour {
+public class FPControl : NetworkBehaviour {
 
 	public Controller control;
 	public Collider collider;
+	public Collider miniSelect;
 	public Rigidbody physics;
 	public GameObject player = null;
 	public float height;
@@ -28,9 +32,10 @@ public class FPControl : MonoBehaviour {
 	public float fireDelay;
 	public DmgIndicator dmgIndicator;
 	public Image hitIndicator;
+	public SpriteRenderer miniHighlight;
 
 	//[HideInInspector]
-	public int team;
+	/*[SyncVar]*/ public int team;
 	//[HideInInspector]
 	public Squad squad = null;
 
@@ -38,19 +43,30 @@ public class FPControl : MonoBehaviour {
 	//private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
-	private int health = 100;//TODO: raplace with deliberated helath system
-
+	private int health = 100;//TODO: replace with deliberated helath system
+	private bool isDead = false;
+	void OnStartLocalPlayer() {Debug.Log("local player");}//TODO: remove
 	void Start ()
 	{
-		//Cursor.lockState = CursorLockMode.Locked;
-		//Cursor.visible = false;
+		//if(!hasAuthority)
+			//Init(isServer ?1 :0);//Init with other team
+
+		//if(!isServer)
+			Init(team);
 	}
 
-	public void Init(GameObject p, Rigidbody r, Collider c, int n)
+	public void Init(int t/*GameObject p, Rigidbody r, Collider c, int n*/)
 	{
-		player = p;
-		physics = r;
-		collider = c;
+		team = t;
+		gameObject.layer = LayerMask.NameToLayer(Manager.teamLayers[team]);
+
+		GetComponent<MeshRenderer>().material = Manager.teamMaterials[team];
+		foreach(SpriteRenderer s in GetComponentsInChildren<SpriteRenderer>())
+			s.color = Manager.teamColors[team];
+
+		player = gameObject;// p;
+		physics = GetComponent<Rigidbody>();// r;
+		collider = GetComponent<Collider>();// c;
 	}
 
 	public void Assign(Squad newSq)
@@ -91,8 +107,14 @@ public class FPControl : MonoBehaviour {
 			}
 			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
 				r.velocity = physics.velocity;
-			//TODO: When models are finished, set ragdoll pose
-			Destroy(player);//Destroy on next frame
+			//TODO: Make this object ragdoll instead of spawning prefab
+
+			collider.enabled = false;
+			physics.isKinematic = true;
+			miniSelect.enabled = false;
+
+			isDead = true;
+
 			return true;
 		}else
 		{
@@ -107,17 +129,20 @@ public class FPControl : MonoBehaviour {
 
 
 
-		if(player==null)
+		if(player==null /*|| !hasAuthority*/)
 		{
 			return;
 		}
 
 
 
-		//if(cursorEngaged || !(control is PlayerControl))
-		//{
-			//Cursor.lockState = CursorLockMode.Locked;
+		if(!(control is PlayerControl) || isDead) //If not under player control or dead
+			miniHighlight.enabled = false;
+		else
+			miniHighlight.enabled = true;
 
+		if(!isDead  &&  (hasAuthority  ||  isServer))//Must not be dead. Must either have Client authority or be on the Server
+		{
 			Controller.input inp = control.GetInput();
 
 			if(control is PlayerControl)
@@ -183,7 +208,8 @@ public class FPControl : MonoBehaviour {
 
 		//}else
 		//	Cursor.lockState = CursorLockMode.None;
-		camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
+			camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
+		}
 	}
 
 
