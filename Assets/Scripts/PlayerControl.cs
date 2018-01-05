@@ -147,7 +147,7 @@ public class PlayerControl : Controller {
 						pointingSquad.highlighted = true;
 					}else if(f.tag=="Unit Select"/*  &&  f.GetComponentInParent<FPControl>()!=null*/)
 					{
-						if(Input.GetMouseButtonDown(0) && f.GetComponentInParent<FPControl>().team==team)
+						if(isLocalPlayer && Input.GetMouseButtonDown(0) && f.GetComponentInParent<FPControl>().team==team)
 						{
 							pointingUnit = f.GetComponentInParent<FPControl>();
 						}
@@ -168,13 +168,13 @@ public class PlayerControl : Controller {
 						player.hitIndicator = null;
 						player.dmgIndicator = null;
 					}
-					if(!isServer)//Server value is taken care of in the command
-					{
+					//if(!isServer)//Server value is taken care of in the command
+					//{
 						player = pointingUnit;
 						player.control = this;
 						player.hitIndicator = hitIndicator;
 						player.dmgIndicator = dmgIndicator;
-					}
+					//}
 					//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
 					//	Debug.Log("switched");
 					HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
@@ -238,12 +238,12 @@ public class PlayerControl : Controller {
 
 		//NetworkServer.ReplacePlayerForConnection(connectionToClient, obj, playerControllerId);
 		obj.GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);
-		obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
+		//CLIENT ONYL obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
 
 		//Set values in 'player' for the host
-		player.control = this;
-		player.hitIndicator = hitIndicator;
-		player.dmgIndicator = dmgIndicator;
+		//CLIENT ONYL player.control = this;
+		//CLIENT ONYL player.hitIndicator = hitIndicator;
+		//CLIENT ONYL player.dmgIndicator = dmgIndicator;
 
 	}
 

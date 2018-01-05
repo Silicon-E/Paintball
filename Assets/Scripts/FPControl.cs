@@ -6,6 +6,8 @@ using UnityEngine.UI;
 using System;
 using System.ComponentModel.Design.Serialization;
 using System.Runtime.InteropServices;
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -43,7 +45,7 @@ public class FPControl : NetworkBehaviour {
 	//private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
-	private int health = 100;//TODO: replace with deliberated helath system
+	[SyncVar] private int health = 100;//TODO: replace with deliberated helath system
 	private bool isDead = false;
 	void OnStartLocalPlayer() {Debug.Log("local player");}//TODO: remove
 	void Start ()
@@ -90,8 +92,11 @@ public class FPControl : NetworkBehaviour {
 		squad = null;
 	}
 
-	public bool Damage(int amount, Vector3 dir)//Called to damage this controller
-	{
+	public bool Damage(int amount, Vector3 dir, int isFromServer = -1)//Called to damage this controller, isFromServer defaults to be "sent" from other side
+	{Debug.Log("Damage(), isFromServer: "+isFromServer);
+		if(isFromServer == -1) isFromServer = (!isServer) ?1 :0;//Translate
+		if(isFromServer == (isServer ?1 :0)) return false;//Do not run based on own message
+		Debug.Log("didn't abort");
 		health-=amount;//TODO: replace with deliberated damage system
 		if(dmgIndicator!=null) dmgIndicator.Add(dir);
 		if(health<=0)
@@ -121,6 +126,15 @@ public class FPControl : NetworkBehaviour {
 			if(control is AIControl) ((AIControl)control).TookDamage(dir);
 			return false;
 		}
+		CmdDamageAlert(amount, dir, (isServer ?1 :0));
+	}
+	[Command] void CmdDamageAlert(int amount, Vector3 dir, int isFromServer)
+	{Debug.Log("CmdDamageAlert");
+		RpcDamageAlert(amount, dir, isFromServer);
+	}
+	[ClientRpc] void RpcDamageAlert(int amount, Vector3 dir, int isFromServer)
+	{Debug.Log("RpcDamageAlert");
+		Damage(amount, dir, isFromServer);
 	}
 
 	void Update ()
@@ -129,7 +143,7 @@ public class FPControl : NetworkBehaviour {
 
 
 
-		if(player==null /*|| !hasAuthority*/)
+		if(player==null || !hasAuthority)
 		{
 			return;
 		}
@@ -218,7 +232,7 @@ public class FPControl : NetworkBehaviour {
 
 	void FixedUpdate ()
 	{
-		if(player==null)
+		if(player==null || !hasAuthority)
 		{
 			return;
 		}
