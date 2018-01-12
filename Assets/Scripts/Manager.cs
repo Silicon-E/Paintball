@@ -8,6 +8,26 @@ using UnityEditor;
 
 public class Manager
 {
+	public struct HitInfo
+	{
+		public int unitId;
+		public int amount;
+		public Vector3 dir;
+		public Vector3 point;
+		public int newHealth;
+		//public int isFromServer;
+		public HitInfo(int u, int a, Vector3 d, Vector3 p, int n/*, int i*/)
+		{
+			unitId = u;
+			amount = a;
+			dir = d;
+			point = p;
+			newHealth = n;
+			//isFromServer = i;
+		}
+	}
+	static public List<HitInfo> bulletHits = new List<HitInfo>();//This necessary to get around Unity's built-in refusal to let Bullet send Cmds
+
 	static public Material[] teamMaterials = {
 		Resources.Load("Team 0") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 0.mat"),
 		Resources.Load("Team 1") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 1.mat")
@@ -29,4 +49,6 @@ public class Manager
 	public static LayerMask[] losMasks = {LayerMask.GetMask(new string[]{"Terrain","Team 1"}), LayerMask.GetMask(new string[]{"Terrain","Team 0"})};
 
 	public static List<Squad> needMembers = new List<Squad>();
+
+	public static float ragdollImpulse = 5f;
 }

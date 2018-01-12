@@ -23,6 +23,7 @@ public class PlayerControl : Controller {
 	public Image pauseDarken;
 
 	[HideInInspector]public int team = 0;
+	[HideInInspector]public bool hasStarted = false;
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
 	static float lerpCamSpeed = 2f; 
@@ -62,10 +63,12 @@ public class PlayerControl : Controller {
 		maxSquads = Squad.CODES.Length;
 		newSqButton.onClick.AddListener(NewSquad);
 
-		if(isServer)
-			team = 0;
-		else
-			team = 1;
+		if(isLocalPlayer) //If on own side
+			team = isServer ?0 :1;
+		else //If on other side
+			team = isServer ?1 :0;
+
+		hasStarted = true;
 	}
 
 	public override input GetInput()
@@ -100,7 +103,7 @@ public class PlayerControl : Controller {
 	{
 		if(!isLocalPlayer)
 			return;
-
+		
 
 		if(Input.GetKeyDown(KeyCode.Tab) && !paused)//Can't tab in/out while paused
 		if(player!=null || !commandMode) //If no player and in command mode, no tabbing out
@@ -180,6 +183,7 @@ public class PlayerControl : Controller {
 					HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
 
 					//NetworkServer.ReplacePlayerForConnection(connectionToClient, f.gameObject, playerControllerId);
+					// DOES NOT WORK; CANNOT RUN ON CLIENT GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);//TODO: does this solve the client not being able to send?
 					CmdReplacePlayer(pointingUnit.netId);
 				}
 			}
@@ -207,7 +211,20 @@ public class PlayerControl : Controller {
 			commandLerp += Time.deltaTime*lerpPerSec;
 			commandLerp = Mathf.Clamp(commandLerp, 0, 1);
 
-
+			if(player==null || player.isDead)
+			{
+				Vector2 moveVec = Vector2.zero;
+				if(Input.GetKey(KeyCode.W))
+					moveVec.y++;
+				if(Input.GetKey(KeyCode.S))
+					moveVec.y--;
+				if(Input.GetKey(KeyCode.D))
+					moveVec.x++;
+				if(Input.GetKey(KeyCode.A))
+					moveVec.x--;
+				moveVec.Normalize();
+				minimapCamera.transform.position += 5f*Time.deltaTime*new Vector3(moveVec.x, 0f, moveVec.y);//TODO: maybe replace '5f' with inspector parameter
+			}
 		}else
 		{
 			commandLerp -= Time.deltaTime*lerpPerSec;
@@ -224,6 +241,16 @@ public class PlayerControl : Controller {
 
 		//minimapMask.localScale = Vector3.one * ( commandLerp*(Mathf.Max(Screen.width, Screen.height)-200)/200 +1);//   /HUDCanvas.referencePixelsPerUnit
 		minimapCamera.orthographicSize = 15*Mathf.Max(minimapMask.localScale.x, minimapMask.localScale.y);
+
+
+		foreach(Manager.HitInfo hit in Manager.bulletHits)//This necessary to get around Unity's built-in refusal to let Bullet send Cmds
+		{
+			if(isServer)
+				RpcDamageAlert(hit.unitId, hit.amount, hit.dir, hit.point, hit.newHealth);
+			else // if is client
+				CmdDamageAlert(hit.unitId, hit.amount, hit.dir, hit.point, hit.newHealth);
+		}
+		Manager.bulletHits.Clear();
 	}
 
 	[Command]
@@ -238,12 +265,12 @@ public class PlayerControl : Controller {
 
 		//NetworkServer.ReplacePlayerForConnection(connectionToClient, obj, playerControllerId);
 		obj.GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);
-		//CLIENT ONYL obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
+		//CLIENT ONLY obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
 
 		//Set values in 'player' for the host
-		//CLIENT ONYL player.control = this;
-		//CLIENT ONYL player.hitIndicator = hitIndicator;
-		//CLIENT ONYL player.dmgIndicator = dmgIndicator;
+		//CLIENT ONLY player.control = this;
+		//CLIENT ONLY player.hitIndicator = hitIndicator;
+		//CLIENT ONLY player.dmgIndicator = dmgIndicator;
 
 	}
 
@@ -288,5 +315,29 @@ public class PlayerControl : Controller {
 		Vector3 pos = minimapCamera.ScreenToWorldPoint(Input.mousePosition);
 		//pos.Scale(multi);
 		return pos;*/
+	}
+
+	[Command] void CmdDamageAlert(int id, int amount, Vector3 dir, Vector3 point, int newHealth)
+	{Debug.Log("CmdDamageAlert");
+		DamageAlert(id, amount, dir, point, newHealth);
+	}
+	[ClientRpc] void RpcDamageAlert(int id, int amount, Vector3 dir, Vector3 point, int newHealth)
+	{Debug.Log("RpcDamageAlert");
+		DamageAlert(id, amount, dir, point, newHealth);
+	}
+	void DamageAlert(int id, int amount, Vector3 dir, Vector3 point, int newHealth)
+	{Debug.Log("DamageAlert");
+
+		FPControl target = null;
+		foreach(FPControl fp in FindObjectsOfType<FPControl>())
+		{
+			if(fp.unitId == id)
+			{
+				target = fp;
+				break;
+			}
+		}
+		if(target != null)
+			target.OnDamage(amount, dir, point, newHealth);
 	}
 }

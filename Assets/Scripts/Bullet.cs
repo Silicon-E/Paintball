@@ -2,12 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Collections.Specialized;
+using UnityEngine.Networking;
+//using NUnit.Framework.Internal.Filters;
+
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 using UnityEngine.UI;
 
-public class Bullet : MonoBehaviour {
+public class Bullet : NetworkBehaviour {
 	public LineRenderer line;
 	private Controller control;
 	//public LayerMask[] teamMasks;
@@ -18,9 +22,10 @@ public class Bullet : MonoBehaviour {
 	static float range1 = 4f;//Range of first raycast
 	static float range2 = 8f;//Range of second raycast
 	float rangeFinal = 100f;//Max range
-	private float speed;
 
-	static float ragdollImpulse = 5f;
+	private float speed;
+	private bool isEffect;
+	private int team;
 
 	private Image hitIndicator;
 
@@ -38,21 +43,24 @@ public class Bullet : MonoBehaviour {
 		
 	}
 
-	public void Init(Controller c, Vector3 o, Vector3 d, int team, Image h)
+	public void Init(Controller c, Vector3 o, Vector3 d, int t, Image h, bool isEff)
 	{
 		control = c;
 
 		origin = o;
 		direction = d;
 
-		line.material.color = Manager.teamColors[team];
+		line.material.color = Manager.teamColors[t];
 
 		start = transform.position;//Start at spawn location
 		speed = range1 / mark2;//Meters per second
 
 		hitIndicator = h;
 
-		hitMask = Manager.losMasks[team];//teamMasks[team];
+		isEffect = isEff;
+		team = t;
+
+		hitMask = Manager.losMasks[t];//teamMasks[team];
 	}
 	
 	// Update is called once per frame
@@ -116,22 +124,8 @@ public class Bullet : MonoBehaviour {
 				Color c = hitIndicator.color; c.a = 1f;
 				hitIndicator.color = c;
 			}
-			if(fp.Damage(10, -direction))//TODO: replace with deliberated damage system
-			{
-				if(control is AIControl) ((AIControl)control).shouldChase = false;
-				for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
-				{
-					foreach(Collider c in Physics.OverlapSphere(hit.point, r))
-					{
-						if(c.gameObject.layer == LayerMask.NameToLayer("Ragdoll"))
-						{
-							c.gameObject.GetComponent<Rigidbody>().AddForceAtPosition(direction*ragdollImpulse, hit.point, ForceMode.Impulse);
-							break;
-						}
-					}
-				}
-				//TODO: if damage was lethal
-			}
+			if(!isEffect)
+				DamageUnit(fp, 25, hit.point);
 			return true;
 		}else return false;
 	}
@@ -142,4 +136,25 @@ public class Bullet : MonoBehaviour {
 		else if(dist<=range2) return mark2;
 		else return markFinal;
 	}
+
+	public void DamageUnit(FPControl fp, int amount, Vector3 point)//Called to damage this controller, isFromServer defaults to be "sent" from other side
+	{
+		fp.Damage(amount, -direction, point);
+		if(fp.playerControl != null)//Player may not have joined yet
+			//fp.playerControl.CmdDamageAlert(fp.unitId/*netId*/, amount, -direction, point, fp.health, (isServer ?1 :0));
+			Manager.bulletHits.Add(new Manager.HitInfo(fp.unitId, amount, -direction, point, fp.health/*, (isServer ?1 :0)*/));//This necessary to get around Unity's built-in refusal to let Bullet send Cmds
+	}
+
+	/*
+	MOVED TO PlayerControl
+	[Command] void CmdDamageAlert(NetworkInstanceId id, int amount, Vector3 dir, Vector3 point, int newHealth, int isFromServer)
+	{Debug.Log("CmdDamageAlert");
+		RpcDamageAlert(id, amount, dir, point, newHealth, isFromServer);
+	}
+	[ClientRpc] void RpcDamageAlert(NetworkInstanceId id, int amount, Vector3 dir, Vector3 point, int newHealth, int isFromServer)
+	{Debug.Log("RpcDamageAlert");
+		if(isFromServer != (isServer ?1 :0)) //Only run if sent from other side
+			NetworkServer.FindLocalObject(netId).GetComponent<FPControl>().OnDamage(amount, dir, point, newHealth);
+	}
+	*/
 }

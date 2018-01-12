@@ -9,6 +9,7 @@ public class DmgIndicator : MonoBehaviour {
 	public int maxTicks = 10;
 	public Transform cam;
 	public GameObject tickPrefab;
+
 	private Vector3[] hitDirs;//Directions from which hits come
 	private Image[] ticks;
 	private float[] opacities;

@@ -6,6 +6,7 @@ using UnityEngine.UI;
 using System;
 using System.ComponentModel.Design.Serialization;
 using System.Runtime.InteropServices;
+using System.Runtime.Remoting;
 
 
 #if UNITY_EDITOR
@@ -13,6 +14,8 @@ using UnityEditor;
 #endif
 
 public class FPControl : NetworkBehaviour {
+
+	public int unitId;
 
 	public Controller control;
 	public Collider collider;
@@ -45,9 +48,10 @@ public class FPControl : NetworkBehaviour {
 	//private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
-	[SyncVar] private int health = 100;//TODO: replace with deliberated helath system
-	private bool isDead = false;
-	void OnStartLocalPlayer() {Debug.Log("local player");}//TODO: remove
+	[SyncVar, HideInInspector] public int health = 100;//TODO: replace with deliberated helath system
+	[HideInInspector][SyncVar] public bool isDead = false;
+	[HideInInspector] public PlayerControl playerControl = null;
+
 	void Start ()
 	{
 		//if(!hasAuthority)
@@ -69,6 +73,23 @@ public class FPControl : NetworkBehaviour {
 		player = gameObject;// p;
 		physics = GetComponent<Rigidbody>();// r;
 		collider = GetComponent<Collider>();// c;
+
+		StartCoroutine("FindPlayerControl", t);
+	}
+	IEnumerator FindPlayerControl(int t)
+	{
+		while(playerControl==null)
+		{Debug.Log(gameObject+": playerControl==null");
+			foreach(PlayerControl p in FindObjectsOfType<PlayerControl>())
+			{
+				if(/*p.isLocalPlayer && */p.team==t && p.hasStarted)
+				{
+					playerControl = p;
+					break;
+				}
+			}
+			yield return null;
+		}
 	}
 
 	public void Assign(Squad newSq)
@@ -92,26 +113,39 @@ public class FPControl : NetworkBehaviour {
 		squad = null;
 	}
 
-	public bool Damage(int amount, Vector3 dir, int isFromServer = -1)//Called to damage this controller, isFromServer defaults to be "sent" from other side
-	{Debug.Log("Damage(), isFromServer: "+isFromServer);
-		if(isFromServer == -1) isFromServer = (!isServer) ?1 :0;//Translate
-		if(isFromServer == (isServer ?1 :0)) return false;//Do not run based on own message
-		Debug.Log("didn't abort");
-		health-=amount;//TODO: replace with deliberated damage system
+	public bool Damage(int amount, Vector3 dir, Vector3 point)//Called to damage this controller, isFromServer defaults to be "sent" from other side
+	{
+		if(isDead)
+			return false;
+		health-=amount;
+		return OnDamage(amount, dir, point, health);
+	}
+	public bool OnDamage(int amount, Vector3 dir, Vector3 point, int newHealth)
+	{
+		if(control is AIControl) ((AIControl)control).shouldChase = false;
 		if(dmgIndicator!=null) dmgIndicator.Add(dir);
-		if(health<=0)
+
+		if(newHealth<=0)
 		{
-			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
+			GameObject ragdoll = Ragdoll(true);
+			for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
+			{
+				foreach(Collider c in Physics.OverlapSphere(point, r))
+				{
+					if(c.gameObject.layer == LayerMask.NameToLayer("Ragdoll"))
+					{
+						c.gameObject.GetComponent<Rigidbody>().AddForceAtPosition(-dir*Manager.ragdollImpulse, point, ForceMode.Impulse);
+						break;
+					}
+				}
+			}
 			GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
 			miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
 			if(control is PlayerControl)
 			{
-				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
 				((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f + Vector3.up;
 				((PlayerControl)control).HUDCanvas.enabled = false;
 			}
-			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
-				r.velocity = physics.velocity;
 			//TODO: Make this object ragdoll instead of spawning prefab
 
 			collider.enabled = false;
@@ -123,18 +157,27 @@ public class FPControl : NetworkBehaviour {
 			return true;
 		}else
 		{
-			if(control is AIControl) ((AIControl)control).TookDamage(dir);
+			if(isServer  &&  control is AIControl)
+				((AIControl)control).TookDamage(dir);
 			return false;
 		}
-		CmdDamageAlert(amount, dir, (isServer ?1 :0));
 	}
-	[Command] void CmdDamageAlert(int amount, Vector3 dir, int isFromServer)
-	{Debug.Log("CmdDamageAlert");
-		RpcDamageAlert(amount, dir, isFromServer);
-	}
-	[ClientRpc] void RpcDamageAlert(int amount, Vector3 dir, int isFromServer)
-	{Debug.Log("RpcDamageAlert");
-		Damage(amount, dir, isFromServer);
+
+	protected GameObject Ragdoll(bool isRagdoll)
+	{
+		if(isRagdoll)
+		{
+			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
+			if(control is PlayerControl)
+				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
+			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
+				r.velocity = physics.velocity;
+			
+			return ragdoll;
+		}else
+		{
+			return new GameObject();
+		}
 	}
 
 	void Update ()
@@ -196,7 +239,15 @@ public class FPControl : NetworkBehaviour {
 			{
 				fireCooldown = fireDelay;
 				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
-				newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator);
+				newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator, false);//not only *an effect
+				if(isServer)
+					RpcBulletEffect(control.gameObject, camera.transform.position, camera.transform.forward, team/*, hitIndicator.gameObject*/);
+				else
+					CmdBulletEffect(control.gameObject, camera.transform.position, camera.transform.forward, team/*, hitIndicator.gameObject*/);
+				// MOVED TO CmdNewBullet:
+				//GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+				//newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator);
+				//NetworkServer.SpawnWithClientAuthority(newBullet, playerControl.gameObject);
 
 				/*Debug.Log("Bang");
 				RaycastHit hit;
@@ -224,6 +275,21 @@ public class FPControl : NetworkBehaviour {
 		//	Cursor.lockState = CursorLockMode.None;
 			camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
 		}
+	}
+	[Command] void CmdBulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t/*, GameObject hitInd*/)
+	{
+		BulletEffect(cont, pos, dir, t);
+	}
+	[ClientRpc] void RpcBulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t/*, GameObject hitInd*/)
+	{
+		if(!isServer)
+			BulletEffect(cont, pos, dir, t);
+	}
+	void BulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t)
+	{
+		GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+		newBullet.GetComponent<Bullet>().Init(cont.GetComponent<Controller>(), pos, dir, t, null/*hitInd.GetComponent<Image>()*/, true);
+		//UNESSECARY NetworkServer.SpawnWithClientAuthority(newBullet, playerControl.gameObject);
 	}
 
 
