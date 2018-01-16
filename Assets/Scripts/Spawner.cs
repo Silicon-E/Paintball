@@ -5,6 +5,23 @@ using UnityEngine.Networking;
 
 public class Spawner : NetworkBehaviour {
 
+
+
+
+
+
+
+
+	//CONDEMNED SCRIPT; DO NOT USE
+
+
+
+
+
+
+
+
+
 	public GameObject unitPrefab;
 	public GameObject squadPrefab;
 

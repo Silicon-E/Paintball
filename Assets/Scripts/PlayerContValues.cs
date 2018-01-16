@@ -6,6 +6,8 @@ using UnityEngine.UI;
 public class PlayerContValues : MonoBehaviour {
 
 	public Canvas HUDCanvas;
+	public Canvas pauseCanvas;
+
 	public Image hitIndicator;
 	public DmgIndicator dmgIndicator;
 	public Camera minimapCamera;
@@ -14,5 +16,11 @@ public class PlayerContValues : MonoBehaviour {
 	public RectTransform minimapCanvas;
 	public GameObject commandStuff;
 	public Button newSqButton;
-	public Image pauseDarken;
+
+	[HideInInspector] public PlayerControl localPlayerControl;
+
+	public void UnPause()
+	{
+		localPlayerControl.UnPause();
+	}
 }

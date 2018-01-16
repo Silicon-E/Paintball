@@ -5,7 +5,8 @@ using UnityEngine.UI;
 
 public class Squad : MonoBehaviour {
 
-	public PlayerControl control;
+	public int team;
+	[HideInInspector] public PlayerControl control; //No PlayerControls should exist in the hierarchy, so no need to be visible in inspector
 	public LineRenderer line;
 	public SpriteRenderer marker;
 	public Text label;
@@ -27,15 +28,19 @@ public class Squad : MonoBehaviour {
 
 	public int nameInd;
 
+
+
 	void Start () {
-		foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
+		wantedMembers = members.Count; //Account for preassigned mambers
+
+		/*foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
 		{
 			if(fp.isLocalPlayer)
 			{
 				fp.Assign(this);
 				this.transform.position = new Vector3(fp.transform.position.x, 0, fp.transform.position.z);
 			}
-		}
+		}*/
 	}
 
 	public void UpdateName()

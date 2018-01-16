@@ -20,7 +20,7 @@ public class PlayerControl : Controller {
 	public RectTransform minimapCanvas;
 	public GameObject commandStuff;
 	public Button newSqButton;
-	public Image pauseDarken;
+	public Canvas pauseCanvas;
 
 	[HideInInspector]public int team = 0;
 	[HideInInspector]public bool hasStarted = false;
@@ -49,6 +49,8 @@ public class PlayerControl : Controller {
 	void Start()
 	{
 		PlayerContValues vals = FindObjectOfType<PlayerContValues>();
+		if(isLocalPlayer)
+			vals.localPlayerControl = this;
 
 		HUDCanvas = vals.HUDCanvas;
 		hitIndicator = vals.hitIndicator;
@@ -59,7 +61,7 @@ public class PlayerControl : Controller {
 		minimapCanvas = vals.minimapCanvas;
 		commandStuff = vals.commandStuff;
 		newSqButton = vals.newSqButton;
-		pauseDarken = vals.pauseDarken;
+		pauseCanvas = vals.pauseCanvas;
 		maxSquads = Squad.CODES.Length;
 		newSqButton.onClick.AddListener(NewSquad);
 
@@ -108,8 +110,8 @@ public class PlayerControl : Controller {
 		if(Input.GetKeyDown(KeyCode.Tab) && !paused)//Can't tab in/out while paused
 		if(player!=null || !commandMode) //If no player and in command mode, no tabbing out
 				commandMode = !commandMode;
-		if(Input.GetKeyDown(KeyCode.Escape))
-			paused = !paused;
+		if(Input.GetKeyDown(KeyCode.Escape)  &&  !paused)
+			paused = true;
 		
 		if(commandMode || paused)
 			cursorEngaged = false;
@@ -119,11 +121,12 @@ public class PlayerControl : Controller {
 
 		if(paused)
 		{
-			pauseDarken.enabled = true;
+			pauseCanvas.enabled = true;
+
 			//TODO: pause menu logic
 		}else
 		{
-			pauseDarken.enabled = false;
+			pauseCanvas.enabled = false;
 			if(sqPlacing!=null)
 				sqPlacing.transform.position = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
 		}
@@ -251,6 +254,12 @@ public class PlayerControl : Controller {
 				CmdDamageAlert(hit.unitId, hit.amount, hit.dir, hit.point, hit.newHealth);
 		}
 		Manager.bulletHits.Clear();
+	}
+
+	public void UnPause()
+	{
+		if(paused)
+			paused = false;
 	}
 
 	[Command]

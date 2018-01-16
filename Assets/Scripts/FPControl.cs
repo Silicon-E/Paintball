@@ -79,7 +79,7 @@ public class FPControl : NetworkBehaviour {
 	IEnumerator FindPlayerControl(int t)
 	{
 		while(playerControl==null)
-		{Debug.Log(gameObject+": playerControl==null");
+		{//Debug.Log(gameObject+": playerControl==null");
 			foreach(PlayerControl p in FindObjectsOfType<PlayerControl>())
 			{
 				if(/*p.isLocalPlayer && */p.team==t && p.hasStarted)
