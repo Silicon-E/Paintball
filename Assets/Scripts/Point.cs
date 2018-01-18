@@ -79,7 +79,7 @@ public class Point : NetworkBehaviour {
 				break;
 			}
 
-			UpdateStatus(); Debug.Log("0: "+occupants0+"\n1: "+occupants1);
+			UpdateStatus();// Debug.Log("0: "+occupants0+"\n1: "+occupants1);
 		}
 
 		//UPDATE GUI

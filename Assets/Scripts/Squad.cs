@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Networking;
+using System.CodeDom;
 
-public class Squad : MonoBehaviour {
+public class Squad : NetworkBehaviour {
 
 	public int team;
 	[HideInInspector] public PlayerControl control; //No PlayerControls should exist in the hierarchy, so no need to be visible in inspector
-	public LineRenderer line;
+	//public LineRenderer line;
 	public SpriteRenderer marker;
 	public Text label;
 	public Sprite[] dots;
@@ -18,6 +20,7 @@ public class Squad : MonoBehaviour {
 
 	//[HideInInspector]
 	public List<Waypoint> waypoints = new List<Waypoint>();
+	[HideInInspector] public int signal;//The signal this suad should wait for before continuing to the next waypoint (0 is none)
 
 	//[HideInInspector]
 	public List<FPControl> members;
@@ -28,10 +31,21 @@ public class Squad : MonoBehaviour {
 
 	public int nameInd;
 
-
+	private bool shouldBeServer; //Which value of isServer will allow this squad to be manipulated & displayed
 
 	void Start () {
+		shouldBeServer = (team==0);
 		wantedMembers = members.Count; //Account for preassigned mambers
+
+		if(shouldBeServer != isServer)
+		{
+			GetComponent<Collider>().enabled = false;
+			GetComponent<SpriteRenderer>().enabled = false;
+
+			GetComponentInChildren<Canvas>().enabled = false;
+			GetComponentInChildren<SpriteRenderer>().enabled = false;
+			//GetComponentInChildren<LineRenderer>().enabled = false;
+		}
 
 		/*foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
 		{
@@ -115,14 +129,17 @@ public class Squad : MonoBehaviour {
 		Waypoint prevW = null;
 		foreach(Waypoint w in waypoints)
 		{
-			if(prevW==null)
+			if(prevW==null) //If first pass
 			{
-				line.SetPositions(new Vector3[]{transform.position+Vector3.down, w.transform.position+Vector3.down});
-				line.enabled = true;
+				//line.SetPositions(new Vector3[]{transform.position+Vector3.down, w.transform.position+Vector3.down});
+				//line.enabled = true;
+				w.line.SetPositions(new Vector3[]{this.transform.position+Vector3.down, w.transform.position+Vector3.down});
 			}else
 			{
-				prevW.line.SetPositions(new Vector3[]{prevW.transform.position+Vector3.down, transform.position+Vector3.down});
-				prevW.line.enabled = true;
+				/*prevW.*/w.line.SetPositions(new Vector3[]{prevW.transform.position+Vector3.down, w.transform.position+Vector3.down});
+				//prevW.line.enabled = true;
+				//if(w.index == waypoints.Count-1)
+				//	w.line.enabled = false; THIS HAS A LINE NOW // Last waypoint has no line
 			}
 			prevW = w;
 		}
@@ -134,5 +151,25 @@ public class Squad : MonoBehaviour {
 		}else
 			marker.color = Color.white;
 			
+	}
+
+	public void RemoveWaypoint(int index) //Removes a waypoint and all subsequent waypoints
+	{
+		for(int i=index; i<waypoints.Count; i++)
+		{
+			Destroy(waypoints[i].gameObject);
+			waypoints.RemoveAt(i);
+		}
+	}
+
+	private void NextWaypoint()
+	{
+		foreach(Waypoint wp in waypoints)
+			wp.index--;
+		
+		signal = waypoints[0].signal;
+
+		Destroy(waypoints[0].gameObject);
+		waypoints.RemoveAt(0);
 	}
 }

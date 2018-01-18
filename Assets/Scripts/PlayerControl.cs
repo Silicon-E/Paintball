@@ -10,6 +10,7 @@ public class PlayerControl : Controller {
 	public FPControl player = null;
 	public float mouseMulti;
 	public GameObject squadPrefab;
+	public GameObject waypointPrefab;
 
 	public Canvas HUDCanvas;
 	public Image hitIndicator;
@@ -38,6 +39,12 @@ public class PlayerControl : Controller {
 	private bool cursorEngaged = true;
 	private bool paused = false;
 	private Squad sqPlacing = null;
+	private Waypoint wpPlacing = null;
+	private bool isPlacing = false;
+	private KeyCode[] numpadCodes = {KeyCode.Keypad0, KeyCode.Keypad1, KeyCode.Keypad2, KeyCode.Keypad3, KeyCode.Keypad4,
+		KeyCode.Keypad5, KeyCode.Keypad6, KeyCode.Keypad7, KeyCode.Keypad8, KeyCode.Keypad9};
+	private KeyCode[] alphaNumCodes = {KeyCode.Alpha0, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4,
+		KeyCode.Alpha5, KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9};
 
 	void Awake()
 	{
@@ -127,22 +134,30 @@ public class PlayerControl : Controller {
 		}else
 		{
 			pauseCanvas.enabled = false;
-			if(sqPlacing!=null)
-				sqPlacing.transform.position = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
+			if(isPlacing)
+			{
+				if(sqPlacing!=null)
+					sqPlacing.transform.position = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
+				else if(wpPlacing!=null)
+					wpPlacing.transform.position = mouseToWorld();
+			}
 		}
 
 		if(commandLerp==1)
 			commandStuff.SetActive(commandMode);
 		if(commandMode)
 		{
-			if(Input.GetMouseButtonDown(0) && sqPlacing!=null)
+			if(Input.GetMouseButtonDown(0) && isPlacing)
 			{
+				isPlacing = false;
 				sqPlacing = null;
+				wpPlacing = null;
 			}
-			if(sqPlacing==null) //Can't do mouse interaction while placing a squad
+			else if(!isPlacing) //Can't do mouse interaction while placing a squad or waypoint
 			{
 				FPControl pointingUnit = null;
 				Squad pointingSquad = null;
+				Waypoint pointingWayp = null;
 				Debug.DrawRay(mouseToWorld(), Vector3.up, Color.black);
 				Collider[] founds = Physics.OverlapSphere(mouseToWorld(), 0.1f);
 				foreach(Collider f in founds)
@@ -151,6 +166,10 @@ public class PlayerControl : Controller {
 					{
 						pointingSquad = f.GetComponent<Squad>();
 						pointingSquad.highlighted = true;
+					}else if(f.tag=="Waypoint")
+					{
+						pointingWayp = f.GetComponent<Waypoint>();
+						pointingWayp.highlighted = true;
 					}else if(f.tag=="Unit Select"/*  &&  f.GetComponentInParent<FPControl>()!=null*/)
 					{
 						if(isLocalPlayer && Input.GetMouseButtonDown(0) && f.GetComponentInParent<FPControl>().team==team)
@@ -165,6 +184,36 @@ public class PlayerControl : Controller {
 				{//Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
 					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
 					pointingSquad.UpdateMembers();
+
+					if(Input.GetMouseButtonDown(0) && pointingSquad.waypoints.Count==0) //If left-click and no waypoints
+					{
+						NewWaypoint(pointingSquad);
+					}
+					for(int i=0; i<numpadCodes.Length; i++)
+					{
+						if(Input.GetKeyDown(numpadCodes[i]) || Input.GetKeyDown(alphaNumCodes[i]))
+						{
+							pointingSquad.signal = i;
+							break;
+						}
+					}
+				}
+				if(pointingWayp != null)
+				{
+					if(Input.GetMouseButtonDown(0) && pointingWayp.squad.waypoints.Count-1==pointingWayp.index) //If left-click and is final waypoint
+					{
+						NewWaypoint(pointingWayp.squad);
+					}
+					if(Input.GetMouseButtonDown(1)) //If right-click, destroy
+						pointingWayp.squad.RemoveWaypoint(pointingWayp.index);
+					for(int i=0; i<numpadCodes.Length; i++)
+					{
+						if(Input.GetKeyDown(numpadCodes[i]) || Input.GetKeyDown(alphaNumCodes[i]))
+						{
+							pointingWayp.signal = i;
+							break;
+						}
+					}
 				}
 				if(pointingUnit != null)
 				{
@@ -192,7 +241,9 @@ public class PlayerControl : Controller {
 			}
 		}else
 		{
+			isPlacing = false;
 			sqPlacing = null;
+			wpPlacing = null;
 		}
 
 		if(ragdoll!=null)
@@ -300,6 +351,21 @@ public class PlayerControl : Controller {
 		squadInd++;
 		numSquads++;
 		sqPlacing.UpdateName();
+
+		isPlacing = true;
+	}
+	void NewWaypoint(Squad sq)
+	{
+		GameObject newObj = Instantiate(waypointPrefab);
+		Waypoint newWayp = newObj.GetComponent<Waypoint>();
+		wpPlacing = newWayp;
+
+		newWayp.squad = sq;
+		newWayp.index = sq.waypoints.Count;
+
+		sq.waypoints.Add(newWayp);
+
+		isPlacing = true;
 	}
 
 	private Vector3 mouseToWorld(/*Vector2 screen*/)
