@@ -14,7 +14,7 @@ public class AIControl : Controller {
 	public FPControl fp;
 	public Collider frustum;
 	static float degPerSec = 180;
-	static float moveRadius = 5;// Max distance from squad pos at which AI will stop going
+	public static float moveRadius = 5;// Max distance from squad pos at which AI will stop going
 	static float chaseRadius = 10;//Distance from squad pos that AI will chase enemy
 	//static float distPerDeg = 4f/45f;//NoiseMulti bonus per degrees of mouse movement
 	public NavMeshAgent agent;
@@ -101,10 +101,10 @@ public class AIControl : Controller {
 		else
 			radius = (float)new System.Random(gameObject.GetInstanceID()).NextDouble()*moveRadius;
 		//Debug.Log(fp.team+": "+radius);
-		if(Vector3.Distance(fp.player.transform.position+Vector3.down, fp.squad.transform.position) < radius)
+		if(Vector3.Distance(fp.player.transform.position+Vector3.down, fp.squad.destination/*fp.squad.transform.position*/) < radius)
 			return false;
 		
-		agent.destination = fp.squad.transform.position;
+		agent.destination = fp.squad.destination; //fp.squad.transform.position;
 		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * agent.desiredVelocity;
 		inp.move = new Vector2(moveVec.x, moveVec.z);
 		return true;
@@ -182,7 +182,7 @@ public class AIControl : Controller {
 
 	void FixedUpdate()
 	{
-		if(target!=null)
+		if(isServer  &&  target!=null)
 		{
 			if(checkCooldown <= 0f)
 			{

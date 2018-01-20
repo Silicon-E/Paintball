@@ -149,6 +149,8 @@ public class PlayerControl : Controller {
 		{
 			if(Input.GetMouseButtonDown(0) && isPlacing)
 			{
+				if(wpPlacing != null)
+					wpPlacing.placed = true;
 				isPlacing = false;
 				sqPlacing = null;
 				wpPlacing = null;
@@ -172,7 +174,7 @@ public class PlayerControl : Controller {
 						pointingWayp.highlighted = true;
 					}else if(f.tag=="Unit Select"/*  &&  f.GetComponentInParent<FPControl>()!=null*/)
 					{
-						if(isLocalPlayer && Input.GetMouseButtonDown(0) && f.GetComponentInParent<FPControl>().team==team)
+						if(f.GetComponentInParent<FPControl>().team==team)
 						{
 							pointingUnit = f.GetComponentInParent<FPControl>();
 						}
@@ -180,7 +182,45 @@ public class PlayerControl : Controller {
 						break;
 					}
 				}//Debug.Log("pointingSquad: "+pointingSquad);
-				if(pointingSquad != null)
+
+				if(pointingUnit != null)
+				{
+					if(Input.GetMouseButtonDown(0))
+					{
+						if(player!=null)
+						{
+							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
+							player.hitIndicator = null;
+							player.dmgIndicator = null;
+						}
+						//if(!isServer)//Server value is taken care of in the command
+						//{
+						player = pointingUnit;
+						player.control = this;
+						player.hitIndicator = hitIndicator;
+						player.dmgIndicator = dmgIndicator;
+						//}
+						//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
+						//	Debug.Log("switched");
+						HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
+
+						//NetworkServer.ReplacePlayerForConnection(connectionToClient, f.gameObject, playerControllerId);
+						// DOES NOT WORK; CANNOT RUN ON CLIENT GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);//TODO: does this solve the client not being able to send?
+						CmdReplacePlayer(pointingUnit.netId);
+					}else if(Input.GetMouseButtonDown(1)) //Right-click; remove player authority
+					{
+						if(player!=null)
+						{
+							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
+							player.hitIndicator = null;
+							player.dmgIndicator = null;
+						}
+						player = null;
+
+						CmdRemovePlayer();
+					}
+				}
+				else if(pointingSquad != null)
 				{//Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
 					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
 					pointingSquad.UpdateMembers();
@@ -198,7 +238,7 @@ public class PlayerControl : Controller {
 						}
 					}
 				}
-				if(pointingWayp != null)
+				else if(pointingWayp != null)
 				{
 					if(Input.GetMouseButtonDown(0) && pointingWayp.squad.waypoints.Count-1==pointingWayp.index) //If left-click and is final waypoint
 					{
@@ -215,32 +255,11 @@ public class PlayerControl : Controller {
 						}
 					}
 				}
-				if(pointingUnit != null)
-				{
-					if(player!=null)
-					{
-						player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
-						player.hitIndicator = null;
-						player.dmgIndicator = null;
-					}
-					//if(!isServer)//Server value is taken care of in the command
-					//{
-						player = pointingUnit;
-						player.control = this;
-						player.hitIndicator = hitIndicator;
-						player.dmgIndicator = dmgIndicator;
-					//}
-					//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
-					//	Debug.Log("switched");
-					HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
-
-					//NetworkServer.ReplacePlayerForConnection(connectionToClient, f.gameObject, playerControllerId);
-					// DOES NOT WORK; CANNOT RUN ON CLIENT GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);//TODO: does this solve the client not being able to send?
-					CmdReplacePlayer(pointingUnit.netId);
-				}
 			}
 		}else
 		{
+			if(wpPlacing != null)
+				wpPlacing.placed = true;
 			isPlacing = false;
 			sqPlacing = null;
 			wpPlacing = null;
@@ -277,7 +296,7 @@ public class PlayerControl : Controller {
 				if(Input.GetKey(KeyCode.A))
 					moveVec.x--;
 				moveVec.Normalize();
-				minimapCamera.transform.position += 5f*Time.deltaTime*new Vector3(moveVec.x, 0f, moveVec.y);//TODO: maybe replace '5f' with inspector parameter
+				minimapCamera.transform.position += 10f* Time.deltaTime*new Vector3(moveVec.x, 0f, moveVec.y);//TODO: maybe replace '5f' with inspector parameter
 			}
 		}else
 		{
@@ -331,8 +350,14 @@ public class PlayerControl : Controller {
 		//CLIENT ONLY player.control = this;
 		//CLIENT ONLY player.hitIndicator = hitIndicator;
 		//CLIENT ONLY player.dmgIndicator = dmgIndicator;
-
 	}
+	[Command]
+	void CmdRemovePlayer()
+	{
+		if(player!=null)
+			player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
+	}
+		
 
 	void NewSquad()
 	{

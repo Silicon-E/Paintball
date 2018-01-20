@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.CodeDom;
+using System.Collections.Specialized;
 
 public class Squad : NetworkBehaviour {
 
@@ -16,7 +17,10 @@ public class Squad : NetworkBehaviour {
 	public RectTransform dotsContainer;
 	public Image dotsWhite;
 	public Image dotsRed;
+	public int nameInd;
+
 	[HideInInspector] public bool highlighted = false;
+	[HideInInspector] [SyncVar] public Vector3 destination;
 
 	//[HideInInspector]
 	public List<Waypoint> waypoints = new List<Waypoint>();
@@ -29,13 +33,14 @@ public class Squad : NetworkBehaviour {
 	[HideInInspector] public static string[] CODES = {"alpha","bravo","charlie","delta","echo","foxtrot","india","kilo","november","oscar","quebec","romeo","sierra","tango","victor","xray","yankee","zulu"};
 	static string[] ABBR = {"a","b","c","d","e","f","i","k","n","o","q","r","s","t","v","x","y","z"};
 
-	public int nameInd;
-
 	private bool shouldBeServer; //Which value of isServer will allow this squad to be manipulated & displayed
 
 	void Start () {
 		shouldBeServer = (team==0);
 		wantedMembers = members.Count; //Account for preassigned mambers
+
+		if(isServer)
+			StartCoroutine("GetAuthority");
 
 		if(shouldBeServer != isServer)
 		{
@@ -43,7 +48,8 @@ public class Squad : NetworkBehaviour {
 			GetComponent<SpriteRenderer>().enabled = false;
 
 			GetComponentInChildren<Canvas>().enabled = false;
-			GetComponentInChildren<SpriteRenderer>().enabled = false;
+			foreach(SpriteRenderer sr in GetComponentsInChildren<SpriteRenderer>())
+				sr.enabled = false;
 			//GetComponentInChildren<LineRenderer>().enabled = false;
 		}
 
@@ -55,6 +61,22 @@ public class Squad : NetworkBehaviour {
 				this.transform.position = new Vector3(fp.transform.position.x, 0, fp.transform.position.z);
 			}
 		}*/
+	}
+	IEnumerator GetAuthority()
+	{
+		bool finding = true;
+		while(finding)
+		{
+			foreach(PlayerControl p in FindObjectsOfType<PlayerControl>())
+			{
+				if(p.team==team && p.hasStarted)
+				{
+					GetComponent<NetworkIdentity>().AssignClientAuthority(p.connectionToClient);
+					break;
+				}
+			}
+			yield return null;
+		}
 	}
 
 	public void UpdateName()
@@ -125,7 +147,38 @@ public class Squad : NetworkBehaviour {
 		UpdateDots();
 	}
 
-	void Update () {
+	void Update () { Debug.Log(team+": "+destination);
+		if(shouldBeServer != isServer)
+			return;
+		Debug.Log(team+": correct side");
+		SetDestination();
+
+		if(signal==0 && waypoints.Count>0 && waypoints[0].placed) //If can move to next point
+		{
+			bool shouldNext = true;
+			Vector3 avgPos = Vector3.zero;
+			foreach(FPControl fp in members)
+			{
+				avgPos += fp.transform.position;
+				if(Vector3.Distance(destination, fp.transform.position) > AIControl.moveRadius)
+				{
+					shouldNext = false; //If outside moveRadius of destination, do not go to next waypoint.
+				}
+			}
+			avgPos /= members.Count;
+			avgPos.Scale(new Vector3(1,0,1)); // Y is always 0
+
+			if(shouldNext)
+			{
+				transform.position = Vector3.Lerp(transform.position, waypoints[0].transform.position, Time.deltaTime *2f);
+
+				if(Vector3.Distance(transform.position, waypoints[0].transform.position) < 1f)
+					NextWaypoint();
+			}else
+				transform.position = Vector3.Lerp(transform.position, avgPos, Time.deltaTime *5f);
+
+		}
+
 		Waypoint prevW = null;
 		foreach(Waypoint w in waypoints)
 		{
@@ -155,10 +208,10 @@ public class Squad : NetworkBehaviour {
 
 	public void RemoveWaypoint(int index) //Removes a waypoint and all subsequent waypoints
 	{
-		for(int i=index; i<waypoints.Count; i++)
+		while(waypoints.Count < index)
 		{
-			Destroy(waypoints[i].gameObject);
-			waypoints.RemoveAt(i);
+			Destroy(waypoints[index].gameObject);
+			waypoints.RemoveAt(index);
 		}
 	}
 
@@ -171,5 +224,24 @@ public class Squad : NetworkBehaviour {
 
 		Destroy(waypoints[0].gameObject);
 		waypoints.RemoveAt(0);
+	}
+
+	public void SetDestination()
+	{
+		if(signal == 0)
+		{
+			if(waypoints.Count == 0 || !waypoints[0].placed)
+				destination = this.transform.position;
+			else
+				destination = waypoints[0].transform.position;
+		}else
+			destination = this.transform.position;
+
+		if(!isServer) //TODO: is necessary?
+			CmdSetDestination(destination);
+	}
+	[Command] void CmdSetDestination(Vector3 dest)
+	{Debug.Log("CmdSetDestination: "+dest);
+		destination = dest;
 	}
 }
