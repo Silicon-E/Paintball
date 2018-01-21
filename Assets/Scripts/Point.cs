@@ -12,6 +12,7 @@ public class Point : NetworkBehaviour {
 	public Point nextPoint0 = null; //Adjacent point on team 0's side
 	public Point nextPoint1 = null; //Adjacent point on team 1's side
 	public GUIPoint guiPoint; //Contains this point's GUI elements
+	public GameManager gameManager;
 
 	List<FPControl> FPCs0 = new List<FPControl>();
 	List<FPControl> FPCs1 = new List<FPControl>();
@@ -154,6 +155,9 @@ public class Point : NetworkBehaviour {
 
 	void UpdateStatus()
 	{
+		if(gameManager.winningTeam != -1) //No points can be captured when a team has won
+			return;
+
 		if(status == STATUS_WAIT_0 //Stop waiting
 				&& occupants0 > 0)
 			status = STATUS_NONE;
@@ -195,9 +199,9 @@ public class Point : NetworkBehaviour {
 				status = STATUS_HELD_1;
 				next = nextPoint0;
 			}
-			if(next==null)
+			if(next==null) // WINNING
 			{
-				//TODO: WINNING
+				gameManager.winningTeam = (Mathf.Abs(status) > 0) ?0 :1;
 			}else
 			{
 				if(status == STATUS_HELD_0)

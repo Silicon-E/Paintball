@@ -22,6 +22,7 @@ public class PlayerControl : Controller {
 	public GameObject commandStuff;
 	public Button newSqButton;
 	public Canvas pauseCanvas;
+	public GameManager gameManager;
 
 	[HideInInspector]public int team = 0;
 	[HideInInspector]public bool hasStarted = false;
@@ -59,6 +60,7 @@ public class PlayerControl : Controller {
 		if(isLocalPlayer)
 			vals.localPlayerControl = this;
 
+		gameManager = vals.gameManager;
 		HUDCanvas = vals.HUDCanvas;
 		hitIndicator = vals.hitIndicator;
 		dmgIndicator = vals.dmgIndicator;

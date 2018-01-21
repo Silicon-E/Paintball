@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class PlayerContValues : MonoBehaviour {
 
+	public GameManager gameManager;
+
 	public Canvas HUDCanvas;
 	public Canvas pauseCanvas;
 

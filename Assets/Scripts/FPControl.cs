@@ -28,7 +28,7 @@ public class FPControl : NetworkBehaviour {
 	public float jumpI;
 	public float jumpPortion;//Portion of horix movement converted to vertical movement
 	public float crouchSpeed;
-	public GameObject camera;
+	public GameObject camPivot;
 	public float camHeight;
 	public LayerMask onGroundMask;
 	public GameObject ragdollPrefab;
@@ -52,8 +52,13 @@ public class FPControl : NetworkBehaviour {
 	[HideInInspector][SyncVar] public bool isDead = false;
 	[HideInInspector] public PlayerControl playerControl = null;
 
+	[SyncVar] private float rotYaw = 0;
+	[SyncVar] private float rotPitch = 0;
+	private GameManager gameManager;
+
 	void Start ()
 	{
+		gameManager = GameObject.FindObjectOfType<GameManager>();
 		//if(!hasAuthority)
 			//Init(isServer ?1 :0);//Init with other team
 
@@ -204,30 +209,36 @@ public class FPControl : NetworkBehaviour {
 
 			if(control is PlayerControl)
 			{
-				camera.transform.Rotate(new Vector3(0, inp.mouse.x, 0), Space.World);//Rotate Horizontal
-				float preY = camera.transform.localEulerAngles.y;
-				camera.transform.Rotate(new Vector3(-inp.mouse.y, 0, 0));//Rotate Vertical
-				float rawX = camera.transform.localEulerAngles.x;
-				if(camera.transform.localEulerAngles.z>90)
+				rotYaw += inp.mouse.x;
+				rotPitch -= inp.mouse.y;
+				rotPitch = Mathf.Clamp(rotPitch, -90, 90);
+				camPivot.transform.rotation = Quaternion.identity;
+				camPivot.transform.Rotate(rotPitch, rotYaw, 0);
+
+				/*camPivot.transform.Rotate(new Vector3(0, inp.mouse.x, 0), Space.World);//Rotate Horizontal
+				float preY = camPivot.transform.localEulerAngles.y;
+				camPivot.transform.Rotate(new Vector3(-inp.mouse.y, 0, 0));//Rotate Vertical
+				float rawX = camPivot.transform.localEulerAngles.x;
+				if(camPivot.transform.localEulerAngles.z>90)
 				{
-					camera.transform.Rotate(new Vector3(0, 180, 0), Space.World);
-					camera.transform.Rotate(new Vector3(0, 0, 180));
-					if(camera.transform.localEulerAngles.x < 180)
-						camera.transform.Rotate(90-camera.transform.localEulerAngles.x, 0, 0);
+					camPivot.transform.Rotate(new Vector3(0, 180, 0), Space.World);
+					camPivot.transform.Rotate(new Vector3(0, 0, 180));
+					if(camPivot.transform.localEulerAngles.x < 180)
+						camPivot.transform.Rotate(90-camPivot.transform.localEulerAngles.x, 0, 0);
 					else
-						camera.transform.Rotate(270-camera.transform.localEulerAngles.x, 0, 0);
-				}
+						camPivot.transform.Rotate(270-camPivot.transform.localEulerAngles.x, 0, 0);
+				}*/
 
-				Camera.main.transform.position = camera.transform.position;
-				Camera.main.transform.rotation = camera.transform.rotation;
+				Camera.main.transform.position = camPivot.transform.position;
+				Camera.main.transform.rotation = camPivot.transform.rotation;
 			}
-			camera.transform.parent = null;
-			transform.Rotate(new Vector3(0,camera.transform.rotation.eulerAngles.y - player.transform.rotation.eulerAngles.y,0));
-			camera.transform.parent = player.transform;
+			camPivot.transform.parent = null;
+			transform.Rotate(new Vector3(0,camPivot.transform.rotation.eulerAngles.y - player.transform.rotation.eulerAngles.y,0));
+			camPivot.transform.parent = player.transform;
 
-			//player.transform.RotateAround(player.transform.position, Vector3.up, camera.transform.localRotation.eulerAngles.y);
-			//camera.transform.RotateAround(camera.transform.position, Vector3.up, -camera.transform.localRotation.eulerAngles.y);
-			Debug.DrawRay(camera.transform.position, camera.transform.forward, Color.blue);
+			//player.transform.RotateAround(player.transform.position, Vector3.up, camPivot.transform.localRotation.eulerAngles.y);
+			//camPivot.transform.RotateAround(camPivot.transform.position, Vector3.up, -camPivot.transform.localRotation.eulerAngles.y);
+			Debug.DrawRay(camPivot.transform.position, camPivot.transform.forward, Color.blue);
 
 			fireCooldown -= Time.deltaTime;
 			if(hitIndicator!=null)
@@ -235,24 +246,24 @@ public class FPControl : NetworkBehaviour {
 				Color c = hitIndicator.color; c.a -= 2f*Time.deltaTime;
 				hitIndicator.color = c;
 			}
-			if(inp.mouseL && fireCooldown<=0f)
+			if(inp.mouseL && fireCooldown<=0f     && gameManager.winningTeam==-1)//Cannot shoot if a team has won
 			{
 				fireCooldown = fireDelay;
 				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
-				newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator, false);//not only *an effect
+				newBullet.GetComponent<Bullet>().Init(control, camPivot.transform.position, camPivot.transform.forward, team, hitIndicator, false);//not only *an effect
 				if(isServer)
-					RpcBulletEffect(control.gameObject, camera.transform.position, camera.transform.forward, team/*, hitIndicator.gameObject*/);
+					RpcBulletEffect(control.gameObject, camPivot.transform.position, camPivot.transform.forward, team/*, hitIndicator.gameObject*/);
 				else
-					CmdBulletEffect(control.gameObject, camera.transform.position, camera.transform.forward, team/*, hitIndicator.gameObject*/);
+					CmdBulletEffect(control.gameObject, camPivot.transform.position, camPivot.transform.forward, team/*, hitIndicator.gameObject*/);
 				// MOVED TO CmdNewBullet:
 				//GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
-				//newBullet.GetComponent<Bullet>().Init(control, camera.transform.position, camera.transform.forward, team, hitIndicator);
+				//newBullet.GetComponent<Bullet>().Init(control, camPivot.transform.position, camPivot.transform.forward, team, hitIndicator);
 				//NetworkServer.SpawnWithClientAuthority(newBullet, playerControl.gameObject);
 
 				/*Debug.Log("Bang");
 				RaycastHit hit;
 				//Check if Raycast hits anything
-				if (Physics.Raycast(camera.transform.position, camera.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets")))
+				if (Physics.Raycast(camPivot.transform.position, camPivot.transform.TransformDirection(Vector3.forward), out hit, 100,  1 << LayerMask.NameToLayer("Targets")))
 				{
 					//sends message to Target.cs that target has been hit
 					GameObject hitObject = hit.transform.gameObject;
@@ -262,18 +273,18 @@ public class FPControl : NetworkBehaviour {
 					Debug.Log("Hit: " + hit.collider);
 
 					//Draws Raycast line, Green if it collided with anything on layer 2
-					Debug.DrawRay(camera.transform.position, camera.transform.TransformDirection(Vector3.forward) * 100, Color.green);
+					Debug.DrawRay(camPivot.transform.position, camPivot.transform.TransformDirection(Vector3.forward) * 100, Color.green);
 				}
 				else
 				{
 					//Draws raycast line, Red if it didn't collide with anything on layer 2
-					Debug.DrawRay(camera.transform.position,camera.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
+					Debug.DrawRay(camPivot.transform.position,camPivot.transform.TransformDirection(Vector3.forward) * 100 ,Color.red);
 				}*/
 			}
 
 		//}else
 		//	Cursor.lockState = CursorLockMode.None;
-			camera.transform.position = player.transform.position+new Vector3(0,camHeight,0);
+			camPivot.transform.position = player.transform.position+new Vector3(0,camHeight,0);
 		}
 	}
 	[Command] void CmdBulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t/*, GameObject hitInd*/)
@@ -332,7 +343,7 @@ public class FPControl : NetworkBehaviour {
 			onGround = true;
 
 			Vector3 horizMove = new Vector3(physics.velocity.x, 0f, physics.velocity.z);//X & Z movement
-			Vector3 moveVec = Quaternion.Euler(0,camera.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y).normalized;
+			Vector3 moveVec = Quaternion.Euler(0,camPivot.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y).normalized;
 			moveVec*=crouchFactor;//The more crouched (max at time of writing: 0.5f), the slower
 
 			if(moveVec != Vector3.zero)

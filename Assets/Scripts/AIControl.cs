@@ -41,17 +41,17 @@ public class AIControl : Controller {
 	{
 		if(target==null) return false;
 
-		Quaternion preRot = fp.camera.transform.rotation;
+		Quaternion preRot = fp.camPivot.transform.rotation;
 
-		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camera.transform.position));
+		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camPivot.transform.position));
 		velOffset *= (Mathf.Abs(noise.x)+0)*4f;//Essentially a random float from 0 to 4 that is the same for each shot
 		Vector3 aimPos = target.transform.position + velOffset;
 
-		fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camera.transform.position), degPerSec*Time.deltaTime*noiseMulti);
+		fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camPivot.transform.position), degPerSec*Time.deltaTime*noiseMulti);
 
-		float sep = Vector3.Distance(aimPos, fp.camera.transform.position + fp.camera.transform.forward*Vector3.Distance(target.transform.position, fp.camera.transform.position));
+		float sep = Vector3.Distance(aimPos, fp.camPivot.transform.position + fp.camPivot.transform.forward*Vector3.Distance(target.transform.position, fp.camPivot.transform.position));
 		noiseMulti = Mathf.Min(1, sep*0.5f);
-		//noiseMulti += Quaternion.Angle(preRot, fp.camera.transform.rotation) *distPerDeg;
+		//noiseMulti += Quaternion.Angle(preRot, fp.camPivot.transform.rotation) *distPerDeg;
 		//Mathf.Clamp(noiseMulti, 0f, 1f);
 		if(sep<1f)
 			Fire(ref inp);
@@ -62,23 +62,23 @@ public class AIControl : Controller {
 		if(damageDir==Vector3.zero || target!=null)
 			return false;
 
-		if(Vector3.Dot(fp.camera.transform.forward, damageDir)>0.95)//If looking close enough to damageDir
+		if(Vector3.Dot(fp.camPivot.transform.forward, damageDir)>0.95)//If looking close enough to damageDir
 		{
 			damageDir = Vector3.zero;
 			return false;
 		}
 
-		fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation(damageDir), degPerSec*Time.deltaTime*noiseMulti);
+		fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(damageDir), degPerSec*Time.deltaTime*noiseMulti);
 		return true;
 	}
 	bool lookIdle(ref input inp)//Look in moving direction
 	{
 		System.Random rand = new System.Random((int)((Time.time +gameObject.GetInstanceID())*0.5f));//Same seed from each 2-second interval
 
-		if(rand.Next(1,fp.squad.members.Count)==1)//each interval has a 1/4 chance of looking TODO: make it 1/[peeps_in_squad]
-			fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation(new Vector3((float)(rand.NextDouble())*2f-1f, ((float)(rand.NextDouble())*2f-1f)*0.5f, (float)(rand.NextDouble())*2f-1f)), degPerSec*Time.deltaTime*noiseMulti);
+		if(rand.Next(1,fp.squad.members.Count+1)==1)//each interval has a 1/4 chance of looking TODO: make it 1/[peeps_in_squad]
+			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(new Vector3((float)(rand.NextDouble())*2f-1f, ((float)(rand.NextDouble())*2f-1f)*0.5f, (float)(rand.NextDouble())*2f-1f)), degPerSec*Time.deltaTime*noiseMulti);
 		else
-			fp.camera.transform.rotation = Quaternion.RotateTowards(fp.camera.transform.rotation, Quaternion.LookRotation(fp.physics.velocity), degPerSec*Time.deltaTime*noiseMulti);
+			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(fp.physics.velocity), degPerSec*Time.deltaTime*noiseMulti);
 		return true;
 	}
 
@@ -105,7 +105,7 @@ public class AIControl : Controller {
 			return false;
 		
 		agent.destination = fp.squad.destination; //fp.squad.transform.position;
-		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * agent.desiredVelocity;
+		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camPivot.transform.forward.x,0f,fp.camPivot.transform.forward.z))) * agent.desiredVelocity;
 		inp.move = new Vector2(moveVec.x, moveVec.z);
 		return true;
 	}
@@ -137,12 +137,12 @@ public class AIControl : Controller {
 		if(inp.move==Vector2.zero)//If no previous movePri has affected movement AND returned false (cough moveToSquad cough)
 		{
 			Vector3 desiredMove = targetDir;
-			Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * desiredMove;
+			Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camPivot.transform.forward.x,0f,fp.camPivot.transform.forward.z))) * desiredMove;
 			inp.move = new Vector2(moveVec.x, moveVec.z);
 		}else//move to ideal range, clamped within 45 degrees of agent.desiredVelocity
 		{
 			Vector3 desiredMove = Vector3.RotateTowards(agent.desiredVelocity.normalized, targetDir, 1f, 0f);//1 radian possible deviance
-			Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * desiredMove;
+			Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camPivot.transform.forward.x,0f,fp.camPivot.transform.forward.z))) * desiredMove;
 			inp.move = new Vector2(moveVec.x, moveVec.z);
 		}
 		return true;
@@ -196,7 +196,7 @@ public class AIControl : Controller {
 	private bool CheckLOS()//will NPE if target is not set; if NPE occurrs, set target before calling.
 	{
 		RaycastHit hit;
-		if(Physics.Raycast(fp.camera.transform.position, (target.transform.position-fp.camera.transform.position), out hit, 128, Manager.losMasks[fp.team]))
+		if(Physics.Raycast(fp.camPivot.transform.position, (target.transform.position-fp.camPivot.transform.position), out hit, 128, Manager.losMasks[fp.team]))
 		{
 			if(hit.collider.gameObject == target)
 				return true;
@@ -205,11 +205,11 @@ public class AIControl : Controller {
 	}
 
 	public override input GetInput()
-	{//Debug.DrawRay(fp.camera.transform.position, fp.camera.transform.forward*Vector3.Distance(target.transform.position, fp.camera.transform.position), Color.red);
+	{//Debug.DrawRay(fp.camPivot.transform.position, fp.camPivot.transform.forward*Vector3.Distance(target.transform.position, fp.camPivot.transform.position), Color.red);
 		input inp = new input();
 		agent.nextPosition = fp.transform.position;
 
-		inp.mouse = Vector2.zero;// LookAt(target.transform.position-fp.camera.transform.position, 360);
+		inp.mouse = Vector2.zero;// LookAt(target.transform.position-fp.camPivot.transform.position, 360);
 
 		foreach(Priority p in movePris)
 		{
@@ -276,7 +276,7 @@ public class AIControl : Controller {
 
 	private Vector2 ToLocalMovement(Vector3 worldVec)
 	{
-		Vector3 rotatedVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camera.transform.forward.x,0f,fp.camera.transform.forward.z))) * worldVec;
+		Vector3 rotatedVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camPivot.transform.forward.x,0f,fp.camPivot.transform.forward.z))) * worldVec;
 		return new Vector2(rotatedVec.x, rotatedVec.z);
 	}
 
@@ -291,13 +291,13 @@ public class AIControl : Controller {
 
 	/*private Vector2 LookAt(Vector3 dir, float distance)//Look direction, degrees per second
 	{
-		//Quaternion diff = Quaternion.LookRotation(fp.camera.transform.forward-dir,Vector3.up);//Quaternion.Inverse(fp.camera.transform.rotation) * Quaternion.LookRotation(dir, Vector3.up);
+		//Quaternion diff = Quaternion.LookRotation(fp.camPivot.transform.forward-dir,Vector3.up);//Quaternion.Inverse(fp.camPivot.transform.rotation) * Quaternion.LookRotation(dir, Vector3.up);
 		//Debug.Log(diff.eulerAngles);
 		Vector3 targetHoriz = target.transform.position; targetHoriz.Scale(new Vector3(1,0,1));
-		Vector3 thisHoriz = fp.camera.transform.position; thisHoriz.Scale(new Vector3(1,0,1));
+		Vector3 thisHoriz = fp.camPivot.transform.position; thisHoriz.Scale(new Vector3(1,0,1));
 		Quaternion horiz = Quaternion.LookRotation(targetHoriz-thisHoriz, Vector3.up);
 			Debug.Log(targetHoriz-thisHoriz);
-		Vector3 relativeUp = new Vector3(0, target.transform.position.y-fp.camera.transform.position.y, (targetHoriz-thisHoriz).magnitude);
+		Vector3 relativeUp = new Vector3(0, target.transform.position.y-fp.camPivot.transform.position.y, (targetHoriz-thisHoriz).magnitude);
 		Quaternion vert = Quaternion.LookRotation(relativeUp, Vector3.up);
 			Debug.Log(relativeUp);
 		Vector2 vec = new Vector2(horiz.eulerAngles.y, vert.eulerAngles.x);
