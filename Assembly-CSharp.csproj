@@ -46,6 +46,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+     <Compile Include="Assets\Materials\Decal.cs" />
+     <Compile Include="Assets\Materials\DeferredDecalRenderer.cs" />
      <Compile Include="Assets\Scripts\AIControl.cs" />
      <Compile Include="Assets\Scripts\Bullet.cs" />
      <Compile Include="Assets\Scripts\Controller.cs" />
@@ -62,9 +64,16 @@
      <Compile Include="Assets\Scripts\Ragdoll.cs" />
      <Compile Include="Assets\Scripts\Shooting.cs" />
      <Compile Include="Assets\Scripts\Spawner.cs" />
+     <Compile Include="Assets\Scripts\SplatParticles.cs" />
      <Compile Include="Assets\Scripts\Squad.cs" />
      <Compile Include="Assets\Scripts\TempNetHUD.cs" />
      <Compile Include="Assets\Scripts\Waypoint.cs" />
+     <Compile Include="Assets\StandardParticlesShaderGUI.cs" />
+     <None Include="Assets\UnityStandardParticles.cginc" />
+     <None Include="Assets\UnityStandardParticleShadow.cginc" />
+     <None Include="Assets\Particle Standard Surface.shader" />
+     <None Include="Assets\Particle Standard Unlit.shader" />
+     <None Include="Assets\Materials\DecalShaderDiffuseNormals.shader" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
  </Reference>

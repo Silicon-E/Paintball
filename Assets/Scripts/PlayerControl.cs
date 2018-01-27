@@ -156,8 +156,16 @@ public class PlayerControl : Controller {
 				isPlacing = false;
 				sqPlacing = null;
 				wpPlacing = null;
-			}
-			else if(!isPlacing) //Can't do mouse interaction while placing a squad or waypoint
+			}else if(Input.GetMouseButtonDown(1) && isPlacing) // Right-click to cancel
+			{
+				if(sqPlacing != null)
+					Destroy(sqPlacing.gameObject);
+				if(wpPlacing != null)
+					Destroy(wpPlacing.gameObject);
+				isPlacing = false;
+				sqPlacing = null;
+				wpPlacing = null;
+			}else if(!isPlacing) //Can't do mouse interaction while placing a squad or waypoint
 			{
 				FPControl pointingUnit = null;
 				Squad pointingSquad = null;

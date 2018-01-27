@@ -124,10 +124,16 @@ public class Bullet : NetworkBehaviour {
 				Color c = hitIndicator.color; c.a = 1f;
 				hitIndicator.color = c;
 			}
+
 			if(!isEffect)
 				DamageUnit(fp, 25, hit.point);
+			
 			return true;
-		}else return false;
+		}else
+		{
+			GameObject.FindObjectOfType<SplatParticles>().CreateParticle(hit, Manager.teamColors[team]);
+			return false;
+		}
 	}
 
 	public static float DistToDelay(float dist)//Return delay of bullet at a given range
