@@ -5,22 +5,29 @@ using UnityEngine.UI;
 using UnityEngine.Networking;
 using System.CodeDom;
 using System.Collections.Specialized;
+using UnityEngine.Events;
 
 public class Squad : NetworkBehaviour {
 
-	public int team;
+	[SyncVar] public int team; //needs to be correct when it is started after sevrer-side instantiation
+	[SyncVar] public int id; //Not unique between sides, so also check team
 	[HideInInspector] public PlayerControl control; //No PlayerControls should exist in the hierarchy, so no need to be visible in inspector
 	//public LineRenderer line;
 	public SpriteRenderer marker;
 	public Text label;
 	public Sprite[] dots;
+	public Sprite[] dotsHollow;
 	public RectTransform dotsContainer;
-	public Image dotsWhite;
 	public Image dotsRed;
+	public Image dotsRedDark;
+	public Image dotsWhite;
+	public Image dotsWhiteDark;
+	public Image dotsRedHollow;
 	public int nameInd;
 
 	[HideInInspector] public bool highlighted = false;
 	[HideInInspector] [SyncVar] public Vector3 destination;
+	[HideInInspector] public int territoryId; //the squadId of the point that controls the territory this squad is in
 
 	//[HideInInspector]
 	public List<Waypoint> waypoints = new List<Waypoint>();
@@ -28,6 +35,7 @@ public class Squad : NetworkBehaviour {
 
 	//[HideInInspector]
 	public List<FPControl> members;
+	//SyncListInt memberIds = new SyncListInt();
 	[HideInInspector] public int wantedMembers = 1;
 
 	[HideInInspector] public static string[] CODES = {"alpha","bravo","charlie","delta","echo","foxtrot","india","kilo","november","oscar","quebec","romeo","sierra","tango","victor","xray","yankee","zulu"};
@@ -35,12 +43,29 @@ public class Squad : NetworkBehaviour {
 
 	private bool shouldBeServer; //Which value of isServer will allow this squad to be manipulated & displayed
 
-	void Start () {
+	public override void OnStartClient()
+	{
+		if(id >= 0) //If spawned instead of pre-included
+		{
+			foreach(PlayerControl p in GameObject.FindObjectsOfType<PlayerControl>())
+			{
+				if(p.team==team && p.isLocalPlayer)
+				{
+					p.NewSquadSpawned(this);
+					break;
+				}
+			}
+		}
+	//}
+	//void Start () {
 		shouldBeServer = (team==0);
 		wantedMembers = members.Count; //Account for preassigned mambers
 
 		if(isServer)
+		{
+			//foreach(FPControl fp in members)
 			StartCoroutine("GetAuthority");
+		}
 
 		if(shouldBeServer != isServer)
 		{
@@ -52,6 +77,8 @@ public class Squad : NetworkBehaviour {
 				sr.enabled = false;
 			//GetComponentInChildren<LineRenderer>().enabled = false;
 		}
+
+		UpdateDots();
 
 		/*foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
 		{
@@ -72,6 +99,7 @@ public class Squad : NetworkBehaviour {
 				if(p.team==team && p.hasStarted)
 				{
 					GetComponent<NetworkIdentity>().AssignClientAuthority(p.connectionToClient);
+					finding = false;
 					break;
 				}
 			}
@@ -79,23 +107,61 @@ public class Squad : NetworkBehaviour {
 		}
 	}
 
+
+
 	public void UpdateName()
 	{
 		label.text = ABBR[nameInd].ToUpper();
 	}
 	void UpdateDots()
 	{
-		dotsWhite.sprite = dots[wantedMembers];
-		dotsRed.sprite = dots[Mathf.Max(0, wantedMembers - members.Count)];
-		float memOverWant = members.Count/(float)wantedMembers;
-		if(float.IsNaN(memOverWant) || float.IsInfinity(memOverWant))
-			memOverWant = 0;
-		dotsWhite.rectTransform.localScale = new Vector3(memOverWant, 1, 1);
-		dotsRed.rectTransform.localScale = new Vector3(1f-memOverWant, 1, 1);
-		dotsContainer.localScale = new Vector3(wantedMembers/10f, 1, 1);
+		float dotTotal = Mathf.Max(members.Count, wantedMembers);
+		int widthRed = Mathf.Max(0, members.Count - wantedMembers);
+		int widthRedDark = 0;
+		int widthWhite = Mathf.Max(0, members.Count - widthRed);
+		int widthWhiteDark = 0;
+		int widthRedHollow = Mathf.Max(0, wantedMembers - members.Count);
+		foreach(FPControl fp in members)
+		{
+			if(fp.isDead)
+			{
+				if(widthWhite > 0)
+				{
+					widthWhiteDark++;
+					widthWhite--;
+				}else
+				{
+					widthRedDark++;
+					widthRed--;
+				}
+			}
+		}
+		dotsRed.sprite = dots[widthRed];
+		dotsRedDark.sprite = dots[widthRedDark];
+		dotsWhite.sprite = dots[widthWhite];
+		dotsWhiteDark.sprite = dots[widthWhiteDark];
+		dotsRedHollow.sprite = dotsHollow[widthRedHollow];
+		//float memOverWant = members.Count/(float)wantedMembers;
+		//if(float.IsNaN(memOverWant) || float.IsInfinity(memOverWant))
+		//	memOverWant = 0;
+		if(dotTotal == 0f) //Prevent divide by 0
+			dotTotal = 1f;
+
+		dotsRedDark.rectTransform.anchoredPosition = new Vector2((150/dotTotal)* (widthRed), 0);
+		dotsWhite.rectTransform.anchoredPosition = new Vector2((150/dotTotal)* (widthRed + widthRedDark), 0);
+		dotsWhiteDark.rectTransform.anchoredPosition = new Vector2((150/dotTotal)* (widthRed + widthRedDark + widthWhite), 0);
+		dotsRedHollow.rectTransform.anchoredPosition = new Vector2((150/dotTotal)* (widthRed + widthRedDark + widthWhite + widthWhiteDark), 0);
+
+		dotsRed.rectTransform.localScale = new Vector3(widthRed/dotTotal, 1, 1);
+		dotsRedDark.rectTransform.localScale = new Vector3(widthRedDark/dotTotal, 1, 1);
+		dotsWhite.rectTransform.localScale = new Vector3(widthWhite/dotTotal, 1, 1);
+		dotsWhiteDark.rectTransform.localScale = new Vector3(widthWhiteDark/dotTotal, 1, 1);
+		dotsRedHollow.rectTransform.localScale = new Vector3(widthRedHollow/dotTotal, 1, 1);
+		dotsContainer.localScale = new Vector3(dotTotal/10f, 1, 1);
 	}
 	public void UpdateMembers()
 	{
+		if(!hasAuthority) return;
 		if(members.Count > wantedMembers)//Has excess members
 		{
 			foreach(Squad s in GameObject.FindObjectsOfType<Squad>())
@@ -103,8 +169,14 @@ public class Squad : NetworkBehaviour {
 				while(s.members.Count < s.wantedMembers)//While found squad needs more members
 				{
 					members[0].Reassign(s);
+					if(!isServer)
+						CmdReassign(members[0].unitId, s.id);
 					if(members.Count <= wantedMembers)//If member count now in equilibrium
+					{
+						UpdateDots();
+						s.UpdateDots();
 						goto findSqsDone;
+					}
 				}
 			}
 			findSqsDone:;
@@ -125,8 +197,14 @@ public class Squad : NetworkBehaviour {
 				while(s.members.Count > s.wantedMembers)//While found has excess members
 				{
 					s.members[0].Reassign(this);
+					if(!isServer)
+						CmdReassign(s.members[0].unitId, this.id);
 					if(members.Count >= wantedMembers)//If member count now in equilibrium
+					{
+						UpdateDots();
+						s.UpdateDots();
 						goto findSqsDone;
+					}
 				}
 			}
 			findSqsDone:;
@@ -146,11 +224,33 @@ public class Squad : NetworkBehaviour {
 		
 		UpdateDots();
 	}
+	[Command] void CmdReassign(int unit, int squad)
+	{
+		FPControl reFP = null;
+		Squad reSquad = null;
+		foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
+			if(fp.unitId == unit)
+			{
+				reFP = fp;
+				break;
+			}
+		foreach(Squad sq in GameObject.FindObjectsOfType<Squad>())
+			if(sq.id==squad && sq.team==team)
+			{
+				reSquad = sq;
+				break;
+			}
+		if(reFP!=null && reSquad!=null)
+		{
+			reFP.Reassign(reSquad);
+		}else
+			Debug.LogError("Reassign Components not found:\nFPControl: "+reFP+"\nSquad: "+reSquad);
+	}
 
-	void Update () { Debug.Log(team+": "+destination);
+	void Update () { Debug.Log(team);
 		if(shouldBeServer != isServer)
 			return;
-		Debug.Log(team+": correct side");
+		
 		SetDestination();
 
 		if(signal==0 && waypoints.Count>0 && waypoints[0].placed) //If can move to next point
@@ -208,7 +308,7 @@ public class Squad : NetworkBehaviour {
 
 	public void RemoveWaypoint(int index) //Removes a waypoint and all subsequent waypoints
 	{
-		while(waypoints.Count < index)
+		while(waypoints.Count > index)
 		{
 			Destroy(waypoints[index].gameObject);
 			waypoints.RemoveAt(index);
@@ -238,7 +338,7 @@ public class Squad : NetworkBehaviour {
 			destination = this.transform.position;
 
 		if(!isServer) //TODO: is necessary?
-			CmdSetDestination(destination);
+			CmdSetDestination(destination); //
 	}
 	[Command] void CmdSetDestination(Vector3 dest)
 	{Debug.Log("CmdSetDestination: "+dest);

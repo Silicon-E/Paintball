@@ -34,6 +34,7 @@ public class PlayerControl : Controller {
 	static float lerpPerSec = 8;
 
 	private int squadInd = 0;
+	private int newSquadId = 0; //Use negative numbers for pre-spawned squads
 	private int numSquads = 0;
 	private int maxSquads;
 	private List<Squad> squads = new List<Squad>();
@@ -159,9 +160,15 @@ public class PlayerControl : Controller {
 			}else if(Input.GetMouseButtonDown(1) && isPlacing) // Right-click to cancel
 			{
 				if(sqPlacing != null)
+				{
 					Destroy(sqPlacing.gameObject);
+					numSquads--;
+				}
 				if(wpPlacing != null)
+				{
 					Destroy(wpPlacing.gameObject);
+					wpPlacing.squad.waypoints.Remove(wpPlacing);
+				}
 				isPlacing = false;
 				sqPlacing = null;
 				wpPlacing = null;
@@ -177,11 +184,9 @@ public class PlayerControl : Controller {
 					if(f.tag=="Squad")
 					{
 						pointingSquad = f.GetComponent<Squad>();
-						pointingSquad.highlighted = true;
 					}else if(f.tag=="Waypoint")
 					{
 						pointingWayp = f.GetComponent<Waypoint>();
-						pointingWayp.highlighted = true;
 					}else if(f.tag=="Unit Select"/*  &&  f.GetComponentInParent<FPControl>()!=null*/)
 					{
 						if(f.GetComponentInParent<FPControl>().team==team)
@@ -191,10 +196,12 @@ public class PlayerControl : Controller {
 
 						break;
 					}
-				}//Debug.Log("pointingSquad: "+pointingSquad);
+				}
 
 				if(pointingUnit != null)
 				{
+					pointingUnit.highlighted = true;
+
 					if(Input.GetMouseButtonDown(0))
 					{
 						if(player!=null)
@@ -231,8 +238,10 @@ public class PlayerControl : Controller {
 					}
 				}
 				else if(pointingSquad != null)
-				{//Debug.Log(Input.GetAxisRaw("Mouse ScrollWheel"));
-					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 1, 10);
+				{
+					pointingSquad.highlighted = true;
+
+					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 0/*1*/, 10);
 					pointingSquad.UpdateMembers();
 
 					if(Input.GetMouseButtonDown(0) && pointingSquad.waypoints.Count==0) //If left-click and no waypoints
@@ -250,12 +259,15 @@ public class PlayerControl : Controller {
 				}
 				else if(pointingWayp != null)
 				{
+					pointingWayp.highlighted = true;
+
 					if(Input.GetMouseButtonDown(0) && pointingWayp.squad.waypoints.Count-1==pointingWayp.index) //If left-click and is final waypoint
 					{
 						NewWaypoint(pointingWayp.squad);
 					}
 					if(Input.GetMouseButtonDown(1)) //If right-click, destroy
 						pointingWayp.squad.RemoveWaypoint(pointingWayp.index);
+					
 					for(int i=0; i<numpadCodes.Length; i++)
 					{
 						if(Input.GetKeyDown(numpadCodes[i]) || Input.GetKeyDown(alphaNumCodes[i]))
@@ -371,25 +383,82 @@ public class PlayerControl : Controller {
 
 	void NewSquad()
 	{
-		if(numSquads >= maxSquads)
+		if(!isLocalPlayer) //Called for both instances, but only the local player should run this
+			return;
+
+		if(numSquads >= maxSquads
+				|| !hasStarted)
 			return;
 
 		Vector3 spawnPos = mouseToWorld(/*new Vector2(Screen.width, Screen.height)*/);
 
+		CmdSpawnSquad(spawnPos, isServer);
+	}
+	[Command] void CmdSpawnSquad(Vector3 spawnPos, bool isFromServer)
+	{
 		GameObject newObj = GameObject.Instantiate(squadPrefab, spawnPos, squadPrefab.transform.rotation);
+		//NetworkServer.Spawn(newObj);
 		newObj.layer = squadPrefab.layer;
 
 		Squad newSq = newObj.GetComponent<Squad>();
-		sqPlacing = newSq;
 
-		sqPlacing.nameInd = squadInd;
+		newSq.team = team;
+		newSq.id = newSquadId;
+		newSquadId++;
+
+		NetworkServer.Spawn(newObj);
+
+		/*if(isFromServer)
+		{
+			newSq.nameInd = squadInd;
+			squadInd++;
+			numSquads++;
+			newSq.UpdateName();
+
+			sqPlacing = newSq;
+			isPlacing = true;
+		}*///else
+		//	RpcSpawnSquadCallback(newSq.id/*newObj*/);
+	}
+	[ClientRpc] void RpcSpawnSquadCallback(int id/*GameObject newObj*/)
+	{
+		if(isServer)
+			return;
+		//newObj.layer = squadPrefab.layer;
+		//Squad newSq = newObj.GetComponent<Squad>();
+		Squad newSq = null;
+		foreach(Squad s in GameObject.FindObjectsOfType<Squad>())
+		{
+			if(s.id==id && s.team==team)
+			{
+				newSq = s;
+				break;
+			}
+		}
+		newSq.gameObject.layer = squadPrefab.layer;
+
+		newSq.nameInd = squadInd;
 		squadInd++;
 		numSquads++;
-		sqPlacing.UpdateName();
+		newSq.UpdateName();
 
+		sqPlacing = newSq;
 		isPlacing = true;
 	}
-	void NewWaypoint(Squad sq)
+	public void NewSquadSpawned(Squad newSq)
+	{
+		newSq.gameObject.layer = squadPrefab.layer;
+
+		newSq.nameInd = squadInd;
+		squadInd++;
+		numSquads++;
+		newSq.UpdateName();
+
+		sqPlacing = newSq;
+		isPlacing = true;
+	}
+
+	void NewWaypoint(Squad sq) //Waypoints are not networked, so no messages are necessary.
 	{
 		GameObject newObj = Instantiate(waypointPrefab);
 		Waypoint newWayp = newObj.GetComponent<Waypoint>();
@@ -433,7 +502,8 @@ public class PlayerControl : Controller {
 	}
 	[ClientRpc] void RpcDamageAlert(int id, int amount, Vector3 dir, Vector3 point, int newHealth)
 	{Debug.Log("RpcDamageAlert");
-		DamageAlert(id, amount, dir, point, newHealth);
+		if(!isServer)
+			DamageAlert(id, amount, dir, point, newHealth);
 	}
 	void DamageAlert(int id, int amount, Vector3 dir, Vector3 point, int newHealth)
 	{Debug.Log("DamageAlert");

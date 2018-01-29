@@ -38,6 +38,7 @@ public class FPControl : NetworkBehaviour {
 	public DmgIndicator dmgIndicator;
 	public Image hitIndicator;
 	public SpriteRenderer miniHighlight;
+	public SpriteRenderer miniSprite;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -51,6 +52,7 @@ public class FPControl : NetworkBehaviour {
 	[SyncVar, HideInInspector] public int health = 100;//TODO: replace with deliberated helath system
 	[HideInInspector][SyncVar] public bool isDead = false;
 	[HideInInspector] public PlayerControl playerControl = null;
+	[HideInInspector] public bool highlighted = false;
 
 	[SyncVar] private float rotYaw = 0;
 	[SyncVar] private float rotPitch = 0;
@@ -188,15 +190,19 @@ public class FPControl : NetworkBehaviour {
 	void Update ()
 	{//Debug.Log(health);
 		
-
-
-
 		if(player==null || !hasAuthority)
 		{
 			return;
 		}
 
 
+
+		if(highlighted)
+		{
+			miniSprite.color = Color.Lerp(Manager.teamColors[team], Color.white, 0.5f);
+			highlighted = false;
+		}else
+			miniSprite.color = Manager.teamColors[team];
 
 		if(!(control is PlayerControl) || isDead) //If not under player control or dead
 			miniHighlight.enabled = false;

@@ -68,7 +68,7 @@
      <Compile Include="Assets\Scripts\Squad.cs" />
      <Compile Include="Assets\Scripts\TempNetHUD.cs" />
      <Compile Include="Assets\Scripts\Waypoint.cs" />
-     <Compile Include="Assets\StandardParticlesShaderGUI.cs" />
+     <Compile Include="Assets\SquadCenter.cs" />
      <None Include="Assets\UnityStandardParticles.cginc" />
      <None Include="Assets\UnityStandardParticleShadow.cginc" />
      <None Include="Assets\Particle Standard Surface.shader" />

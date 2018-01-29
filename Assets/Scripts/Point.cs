@@ -7,6 +7,7 @@ using UnityEngine.Networking.NetworkSystem;
 
 public class Point : NetworkBehaviour {
 
+	public int pointId;
 	public float capTime = 10;
 	public int startingOwner = 0; //0=none, 1=team 0, -1=team 1
 	public Point nextPoint0 = null; //Adjacent point on team 0's side
