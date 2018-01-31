@@ -428,7 +428,8 @@ public class PlayerControl : Controller {
 		newSq.id = newSquadId;
 		newSquadId++;
 
-		NetworkServer.Spawn(newObj);
+		//NetworkServer.Spawn(newObj);
+		NetworkServer.SpawnWithClientAuthority(newObj, this.connectionToClient);
 
 		/*if(isFromServer)
 		{
