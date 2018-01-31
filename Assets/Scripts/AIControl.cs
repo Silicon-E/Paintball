@@ -78,7 +78,7 @@ public class AIControl : Controller {
 		if(rand.Next(1,fp.squad.members.Count+1)==1)//each interval has a 1/4 chance of looking TODO: make it 1/[peeps_in_squad]
 			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(new Vector3((float)(rand.NextDouble())*2f-1f, ((float)(rand.NextDouble())*2f-1f)*0.5f, (float)(rand.NextDouble())*2f-1f)), degPerSec*Time.deltaTime*noiseMulti);
 		else
-			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(fp.physics.velocity), degPerSec*Time.deltaTime*noiseMulti);
+			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(Vector3.Max(new Vector3(0,0,0.0001f), fp.physics.velocity)), degPerSec*Time.deltaTime*noiseMulti);
 		return true;
 	}
 

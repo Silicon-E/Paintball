@@ -15,6 +15,8 @@ public class PlayerControl : Controller {
 	public Canvas HUDCanvas;
 	public Image hitIndicator;
 	public DmgIndicator dmgIndicator;
+	public Slider healthSlider;
+	public Image healthSliderBG;
 	public Camera minimapCamera;
 	public RectTransform minimapMask;
 	public RectTransform minimapImage;
@@ -65,6 +67,8 @@ public class PlayerControl : Controller {
 		HUDCanvas = vals.HUDCanvas;
 		hitIndicator = vals.hitIndicator;
 		dmgIndicator = vals.dmgIndicator;
+		healthSlider = vals.healthSlider;
+		healthSliderBG = vals.healthSliderBG;
 		minimapCamera = vals.minimapCamera;
 		minimapMask = vals.minimapMask;
 		minimapImage = vals.minimapImage;
@@ -81,6 +85,10 @@ public class PlayerControl : Controller {
 			team = isServer ?1 :0;
 
 		hasStarted = true;
+
+
+		healthSlider.fillRect.GetComponent<Image>().color = Manager.teamColors[team];
+		healthSliderBG.color = Color.Lerp(Manager.teamColors[(team==0) ?1 :0], Color.black, 0.5f);
 	}
 
 	public override input GetInput()
@@ -241,9 +249,11 @@ public class PlayerControl : Controller {
 				{
 					pointingSquad.highlighted = true;
 
-					pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 0/*1*/, 10);
-					pointingSquad.UpdateMembers();
-
+					if(Input.GetAxis("Mouse ScrollWheel") != 0f)
+					{
+						pointingSquad.wantedMembers = Mathf.Clamp(pointingSquad.wantedMembers + (int)Input.GetAxis("Mouse ScrollWheel"), 0/*1*/, 10);
+						pointingSquad.UpdateMembers();
+					}
 					if(Input.GetMouseButtonDown(0) && pointingSquad.waypoints.Count==0) //If left-click and no waypoints
 					{
 						NewWaypoint(pointingSquad);
@@ -298,6 +308,18 @@ public class PlayerControl : Controller {
 			Vector3 mmVec = player.transform.position;
 			mmVec.y = minimapCamera.transform.position.y;
 			minimapCamera.transform.position = mmVec;
+		}
+		if(player != null)
+		{
+			healthSlider.value = Mathf.Lerp(healthSlider.value, player.health, Time.deltaTime*3f);
+			/*float interpPerSec = 100f;
+			if(Mathf.Abs(player.health-healthSlider.value)  <  interpPerSec*Time.deltaTime)
+			{
+				healthSlider.value = player.health;
+			}else
+			{
+				healthSlider.value += interpPerSec*Time.deltaTime * Mathf.Sign(player.health - healthSlider.value);
+			}*/
 		}
 
 		if(commandMode)

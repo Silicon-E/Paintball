@@ -35,6 +35,7 @@ public class FPControl : NetworkBehaviour {
 	public GameObject miniXPrefab;
 	public GameObject bulletPrefab;
 	public float fireDelay;
+	public AnimationCurve regenCurve;
 	public DmgIndicator dmgIndicator;
 	public Image hitIndicator;
 	public SpriteRenderer miniHighlight;
@@ -57,6 +58,8 @@ public class FPControl : NetworkBehaviour {
 	[SyncVar] private float rotYaw = 0;
 	[SyncVar] private float rotPitch = 0;
 	private GameManager gameManager;
+	[SyncVar] private float timeSinceDamaged = 0f;
+	[SyncVar] private float regenAccumulation = 0f;
 
 	void Start ()
 	{
@@ -125,6 +128,7 @@ public class FPControl : NetworkBehaviour {
 		if(isDead)
 			return false;
 		health-=amount;
+		timeSinceDamaged = 0f;
 		return OnDamage(amount, dir, point, health);
 	}
 	public bool OnDamage(int amount, Vector3 dir, Vector3 point, int newHealth)
@@ -196,6 +200,11 @@ public class FPControl : NetworkBehaviour {
 		}
 
 
+		timeSinceDamaged += Time.deltaTime;
+		regenAccumulation += regenCurve.Evaluate(timeSinceDamaged) * Time.deltaTime;
+		health += (int)regenAccumulation;
+		health = Mathf.Clamp(health, 0, 100);
+		regenAccumulation -= (int)regenAccumulation;
 
 		if(highlighted)
 		{

@@ -12,6 +12,8 @@ public class PlayerContValues : MonoBehaviour {
 
 	public Image hitIndicator;
 	public DmgIndicator dmgIndicator;
+	public Slider healthSlider;
+	public Image healthSliderBG;
 	public Camera minimapCamera;
 	public RectTransform minimapMask;
 	public RectTransform minimapImage;

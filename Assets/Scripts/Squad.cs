@@ -106,7 +106,10 @@ public class Squad : NetworkBehaviour {
 			yield return null;
 		}
 	}
-
+	public override void OnStartAuthority()
+	{
+		Debug.Log("Got Authority: "+gameObject);
+	}
 
 
 	public void UpdateName()
@@ -247,7 +250,7 @@ public class Squad : NetworkBehaviour {
 			Debug.LogError("Reassign Components not found:\nFPControl: "+reFP+"\nSquad: "+reSquad);
 	}
 
-	void Update () { Debug.Log(team);
+	void Update () {
 		if(shouldBeServer != isServer)
 			return;
 		
