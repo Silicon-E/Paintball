@@ -11,6 +11,7 @@ public class PlayerControl : Controller {
 	public float mouseMulti;
 	public GameObject squadPrefab;
 	public GameObject waypointPrefab;
+	public GameObject healthDotPrefab;
 
 	public Canvas HUDCanvas;
 	public Image hitIndicator;
@@ -49,6 +50,7 @@ public class PlayerControl : Controller {
 		KeyCode.Keypad5, KeyCode.Keypad6, KeyCode.Keypad7, KeyCode.Keypad8, KeyCode.Keypad9};
 	private KeyCode[] alphaNumCodes = {KeyCode.Alpha0, KeyCode.Alpha1, KeyCode.Alpha2, KeyCode.Alpha3, KeyCode.Alpha4,
 		KeyCode.Alpha5, KeyCode.Alpha6, KeyCode.Alpha7, KeyCode.Alpha8, KeyCode.Alpha9};
+	private float healthDotWait = 0f;
 
 	void Awake()
 	{
@@ -311,7 +313,20 @@ public class PlayerControl : Controller {
 		}
 		if(player != null)
 		{
+			if(player.health < healthSlider.value)
+			{
+				healthDotWait += Time.deltaTime;
+				if(healthDotWait > 0.05f)
+				{
+					GameObject dotObj = Instantiate(healthDotPrefab, healthSlider.transform);
+					dotObj.GetComponent<Image>().color = Manager.teamColors[team];
+					dotObj.GetComponent<RectTransform>().anchoredPosition = new Vector3((healthSlider.value*3.20f)-20, Random.Range(-40, 40), 0);
+					healthDotWait = 0f;
+				}
+			}
+
 			healthSlider.value = Mathf.Lerp(healthSlider.value, player.health, Time.deltaTime*3f);
+
 			/*float interpPerSec = 100f;
 			if(Mathf.Abs(player.health-healthSlider.value)  <  interpPerSec*Time.deltaTime)
 			{
