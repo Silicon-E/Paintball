@@ -9,7 +9,7 @@ using System;
 using UnityEngine.Events;
 using System.IO;
 
-public class AIControl : Controller {
+public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-implemented in favor of randomly mulitplying target-leading
 
 	public FPControl fp;
 	public Collider frustum;
@@ -18,7 +18,7 @@ public class AIControl : Controller {
 	static float chaseRadius = 10;//Distance from squad pos that AI will chase enemy
 	//static float distPerDeg = 4f/45f;//NoiseMulti bonus per degrees of mouse movement
 	public NavMeshAgent agent;
-	public GameObject target;
+	public GameObject target = null;
 	private Vector3 chasePos;
 	Vector3 noise;
 	float noiseMulti = 1;
@@ -41,20 +41,32 @@ public class AIControl : Controller {
 	{
 		if(target==null) return false;
 
+		bool isFlanking = Vector3.Dot(fp.gameObject.transform.forward, target.transform.forward) > 0f;
+
 		Quaternion preRot = fp.camPivot.transform.rotation;
 
 		Vector3 velOffset = targetPhysics.velocity * Bullet.DistToDelay(Vector3.Distance(target.transform.position, fp.camPivot.transform.position));
-		velOffset *= (Mathf.Abs(noise.x)+0)*4f;//Essentially a random float from 0 to 4 that is the same for each shot
+		if(isFlanking)
+			/*noiseMulti = 0f*/;
+		else
+			velOffset *= (Mathf.Abs(noise.x)+0)*4f;//Essentially a random float from 0 to 4 that is the same for each shot
 		Vector3 aimPos = target.transform.position + velOffset;
 
-		fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation((aimPos+ noise*noiseMulti) -fp.camPivot.transform.position), degPerSec*Time.deltaTime*noiseMulti);
+		Quaternion desiredRot = Quaternion.LookRotation((aimPos/*+ noise*noiseMulti*/) -fp.camPivot.transform.position);
+		if(Quaternion.Angle(fp.camPivot.transform.rotation, desiredRot) < degPerSec*Time.deltaTime)
+		{
+			fp.camPivot.transform.rotation = desiredRot;
+			Fire(ref inp);
+		}else //if  not looking close enough
+			fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, desiredRot, degPerSec*Time.deltaTime/**noiseMulti*/);
 
 		float sep = Vector3.Distance(aimPos, fp.camPivot.transform.position + fp.camPivot.transform.forward*Vector3.Distance(target.transform.position, fp.camPivot.transform.position));
 		noiseMulti = Mathf.Min(1, sep*0.5f);
 		//noiseMulti += Quaternion.Angle(preRot, fp.camPivot.transform.rotation) *distPerDeg;
 		//Mathf.Clamp(noiseMulti, 0f, 1f);
-		if(sep<1f)
-			Fire(ref inp);
+
+		//if(sep<0.2f)
+		//	Fire(ref inp);
 		return true;
 	}
 	bool lookToDamage(ref input inp)
@@ -68,7 +80,7 @@ public class AIControl : Controller {
 			return false;
 		}
 
-		fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(damageDir), degPerSec*Time.deltaTime*noiseMulti);
+		fp.camPivot.transform.rotation = Quaternion.RotateTowards(fp.camPivot.transform.rotation, Quaternion.LookRotation(damageDir), degPerSec*Time.deltaTime/**noiseMulti*/);
 		return true;
 	}
 	bool lookIdle(ref input inp)//Look in moving direction
@@ -271,7 +283,7 @@ public class AIControl : Controller {
 
 	public void TookDamage(Vector3 dir)
 	{
-		damageDir = dir;
+		damageDir = dir.normalized;
 	}
 
 	private Vector2 ToLocalMovement(Vector3 worldVec)

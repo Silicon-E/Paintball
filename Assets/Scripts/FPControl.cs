@@ -40,6 +40,7 @@ public class FPControl : NetworkBehaviour {
 	public Image hitIndicator;
 	public SpriteRenderer miniHighlight;
 	public SpriteRenderer miniSprite;
+	public Transform worldMuzzle;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -50,7 +51,7 @@ public class FPControl : NetworkBehaviour {
 	//private bool cursorEngaged = true;
 	private float crouchFactor = 1f;
 	private bool onGround = false;
-	[SyncVar, HideInInspector] public int health = 100;//TODO: replace with deliberated helath system
+	[SyncVar, HideInInspector] public int health = 100;
 	[HideInInspector][SyncVar] public bool isDead = false;
 	[HideInInspector] public PlayerControl playerControl = null;
 	[HideInInspector] public bool highlighted = false;
@@ -60,10 +61,14 @@ public class FPControl : NetworkBehaviour {
 	private GameManager gameManager;
 	[SyncVar] private float timeSinceDamaged = 0f;
 	[SyncVar] private float regenAccumulation = 0f;
+	private Transform vmMuzzle;
+	private Vector3 worldGunLocalPos;
 
 	void Start ()
 	{
 		gameManager = GameObject.FindObjectOfType<GameManager>();
+		vmMuzzle = Camera.main.GetComponent<CameraVals>().vmMuzzle;// GetComponentInChildren<Mesh>().GetComponentInChildren<Transform>();
+		worldGunLocalPos = worldMuzzle.transform.parent.position;
 		//if(!hasAuthority)
 			//Init(isServer ?1 :0);//Init with other team
 
@@ -138,6 +143,11 @@ public class FPControl : NetworkBehaviour {
 
 		if(newHealth<=0)
 		{
+			GameObject gunModel = worldMuzzle.transform.parent.gameObject;
+			gunModel.GetComponent<Rigidbody>().isKinematic = false;
+			gunModel.GetComponent<Rigidbody>().AddForce(-dir*Manager.ragdollImpulse *0.25f, ForceMode.Impulse);
+			gunModel.GetComponent<Collider>().enabled = true;
+			gunModel.transform.parent = null;
 			GameObject ragdoll = Ragdoll(true);
 			for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
 			{
@@ -189,6 +199,14 @@ public class FPControl : NetworkBehaviour {
 		{
 			return new GameObject();
 		}
+	}
+	protected void UnRagdoll()
+	{
+		GameObject gunModel = worldMuzzle.transform.parent.gameObject;
+		gunModel.GetComponent<Rigidbody>().isKinematic = true;
+		gunModel.GetComponent<Collider>().enabled = false;
+		gunModel.transform.parent = camPivot.transform;
+		gunModel.transform.localPosition = worldGunLocalPos;
 	}
 
 	void Update ()
@@ -264,14 +282,16 @@ public class FPControl : NetworkBehaviour {
 			if(inp.mouseL && fireCooldown<=0f     && gameManager.winningTeam==-1)//Cannot shoot if a team has won
 			{
 				fireCooldown = fireDelay;
-				GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+				GameObject newBullet = Instantiate(bulletPrefab, (control is PlayerControl) ?vmMuzzle.position :worldMuzzle.position, Quaternion.identity);//TODO: instantiate at muzzle
 				newBullet.GetComponent<Bullet>().Init(control, camPivot.transform.position, camPivot.transform.forward, team, hitIndicator, false);//not only *an effect
 				if(isServer)
+				{
 					RpcBulletEffect(control.gameObject, camPivot.transform.position, camPivot.transform.forward, team/*, hitIndicator.gameObject*/);
-				else
+					AIReactToShot();
+				}else
 					CmdBulletEffect(control.gameObject, camPivot.transform.position, camPivot.transform.forward, team/*, hitIndicator.gameObject*/);
 				// MOVED TO CmdNewBullet:
-				//GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+				//GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TD: instantiate at muzzle
 				//newBullet.GetComponent<Bullet>().Init(control, camPivot.transform.position, camPivot.transform.forward, team, hitIndicator);
 				//NetworkServer.SpawnWithClientAuthority(newBullet, playerControl.gameObject);
 
@@ -305,6 +325,7 @@ public class FPControl : NetworkBehaviour {
 	[Command] void CmdBulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t/*, GameObject hitInd*/)
 	{
 		BulletEffect(cont, pos, dir, t);
+		AIReactToShot();
 	}
 	[ClientRpc] void RpcBulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t/*, GameObject hitInd*/)
 	{
@@ -313,9 +334,22 @@ public class FPControl : NetworkBehaviour {
 	}
 	void BulletEffect(GameObject cont, Vector3 pos, Vector3 dir, int t)
 	{
-		GameObject newBullet = Instantiate(bulletPrefab, player.transform.position, Quaternion.identity);//TODO: instantiate at muzzle
+		GameObject newBullet = Instantiate(bulletPrefab, worldMuzzle.position, Quaternion.identity);//TODO: instantiate at muzzle
 		newBullet.GetComponent<Bullet>().Init(cont.GetComponent<Controller>(), pos, dir, t, null/*hitInd.GetComponent<Image>()*/, true);
 		//UNESSECARY NetworkServer.SpawnWithClientAuthority(newBullet, playerControl.gameObject);
+	}
+
+	protected void AIReactToShot()
+	{
+		foreach(Collider other in Physics.OverlapSphere(transform.position, 20f))
+		{
+			if(other.tag=="Unit")
+			{
+				AIControl ai = other.GetComponent<AIControl>();
+				if(ai.target == null)
+					ai.TookDamage(this.transform.position - other.transform.position);
+			}
+		}
 	}
 
 

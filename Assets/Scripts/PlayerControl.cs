@@ -171,17 +171,17 @@ public class PlayerControl : Controller {
 			{
 				if(sqPlacing != null)
 				{
-					Destroy(sqPlacing.gameObject);
-					numSquads--;
+					DeleteSquad(sqPlacing);
+					//Destroy(sqPlacing.gameObject);
+					//numSquads--;
 				}
 				if(wpPlacing != null)
 				{
 					Destroy(wpPlacing.gameObject);
 					wpPlacing.squad.waypoints.Remove(wpPlacing);
+
+					wpPlacing = null;
 				}
-				isPlacing = false;
-				sqPlacing = null;
-				wpPlacing = null;
 			}else if(!isPlacing) //Can't do mouse interaction while placing a squad or waypoint
 			{
 				FPControl pointingUnit = null;
@@ -267,6 +267,10 @@ public class PlayerControl : Controller {
 							pointingSquad.signal = i;
 							break;
 						}
+					}
+					if(Input.GetKeyDown(KeyCode.Delete)) //Remove Squad
+					{
+						DeleteSquad(pointingSquad);
 					}
 				}
 				else if(pointingWayp != null)
@@ -458,7 +462,7 @@ public class PlayerControl : Controller {
 		}*///else
 		//	RpcSpawnSquadCallback(newSq.id/*newObj*/);
 	}
-	[ClientRpc] void RpcSpawnSquadCallback(int id/*GameObject newObj*/)
+	[ClientRpc] void RpcSpawnSquadCallback(int id/*GameObject newObj*/)     //THIS IS NO LONGER CALLED (INTENTIONAL)
 	{
 		if(isServer)
 			return;
@@ -492,8 +496,42 @@ public class PlayerControl : Controller {
 		numSquads++;
 		newSq.UpdateName();
 
+		squads.Add(newSq);
 		sqPlacing = newSq;
 		isPlacing = true;
+	}
+	protected void DeleteSquad(Squad delSq)
+	{
+		CmdDestroySquad(delSq.id, delSq.team);
+	}
+	[Command] protected void CmdDestroySquad(int sqId, int sqTeam)
+	{
+		Squad delSq = null;
+		foreach(Squad s in GameObject.FindObjectsOfType<Squad>())
+		{
+			if(s.id==sqId && s.team==sqTeam)
+			{
+				delSq = s;
+				break;
+			}
+		}
+
+		if(delSq.members.Count == 0) //Only destroy if no members
+		{
+			NetworkServer.Destroy(delSq.gameObject);
+			RpcDestroySquadSuccess(sqTeam);
+		}
+	}
+	[ClientRpc] protected void RpcDestroySquadSuccess(int sqTeam)
+	{
+		if(team == sqTeam)
+		{
+			sqPlacing = null;  //While placing, can only destroy squads by cancelling placement, so this is fine.
+			isPlacing = false;
+
+			squadInd--;
+			numSquads--;
+		}
 	}
 
 	void NewWaypoint(Squad sq) //Waypoints are not networked, so no messages are necessary.

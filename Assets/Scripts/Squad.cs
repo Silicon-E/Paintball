@@ -171,9 +171,9 @@ public class Squad : NetworkBehaviour {
 			{
 				while(s.members.Count < s.wantedMembers)//While found squad needs more members
 				{
-					members[0].Reassign(s);
 					if(!isServer)
-						CmdReassign(members[0].unitId, s.id);
+						CmdReassign(members[0].unitId, s.id); //Myst be before reassignment on this side, or members[0] will not exist
+					members[0].Reassign(s);
 					if(members.Count <= wantedMembers)//If member count now in equilibrium
 					{
 						UpdateDots();
