@@ -26,6 +26,7 @@ public class Squad : NetworkBehaviour {
 	public int nameInd;
 
 	[HideInInspector] public bool highlighted = false;
+	[HideInInspector] public bool isCommanded = false; //If this squad has a player-controlled member, follow that member
 	[HideInInspector] [SyncVar] public Vector3 destination;
 	[HideInInspector] public int territoryId; //the squadId of the point that controls the territory this squad is in
 
@@ -43,6 +44,10 @@ public class Squad : NetworkBehaviour {
 
 	private bool shouldBeServer; //Which value of isServer will allow this squad to be manipulated & displayed
 
+	public override void OnStartServer()
+	{
+		destination = transform.position;
+	}
 	public override void OnStartClient()
 	{
 		if(id >= 0) //If spawned instead of pre-included
@@ -277,7 +282,7 @@ public class Squad : NetworkBehaviour {
 
 				if(Vector3.Distance(transform.position, waypoints[0].transform.position) < 1f)
 					NextWaypoint();
-			}else
+			}else if(!isCommanded)
 				transform.position = Vector3.Lerp(transform.position, avgPos, Time.deltaTime *5f);
 
 		}

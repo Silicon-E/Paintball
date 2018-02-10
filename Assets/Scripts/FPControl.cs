@@ -66,6 +66,13 @@ public class FPControl : NetworkBehaviour {
 	private Transform vmMuzzle;
 	private Vector3 worldGunLocalPos;
 
+	private Vector3 Flatten(Vector3 inVec)
+	{
+		Vector3 outVec = new Vector3(inVec.x, inVec.y, inVec.z);
+		outVec.Scale(new Vector3(1,0,1));
+		return outVec;
+	}
+
 	void Start ()
 	{
 		gameManager = GameObject.FindObjectOfType<GameManager>();
@@ -194,7 +201,10 @@ public class FPControl : NetworkBehaviour {
 
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
 			if(control is PlayerControl)
+			{
 				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
+				squad.isCommanded = false;
+			}
 			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
 				r.velocity = physics.velocity;
 			
@@ -207,8 +217,10 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.transform.localPosition = worldGunLocalPos;
 
 			if(control is PlayerControl)
+			{
 				gunMesh.enabled = false;
-			else
+				squad.isCommanded = true;
+			}else
 				gunMesh.enabled = true;
 
 			return new GameObject();
@@ -240,7 +252,10 @@ public class FPControl : NetworkBehaviour {
 		if(!(control is PlayerControl) || isDead) //If not under player control or dead
 			miniHighlight.enabled = false;
 		else
+		{
 			miniHighlight.enabled = true;
+			squad.transform.position = Vector3.Lerp(squad.transform.position, Flatten(transform.position), Time.deltaTime *5f);
+		}
 
 		if(!isDead  &&  (hasAuthority  ||  isServer))//Must not be dead. Must either have Client authority or be on the Server
 		{

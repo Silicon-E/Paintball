@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.Networking;
+using UnityEditor;
 
 public class PlayerControl : Controller {
 
@@ -219,6 +220,7 @@ public class PlayerControl : Controller {
 							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
 							player.hitIndicator = null;
 							player.dmgIndicator = null;
+							player.squad.isCommanded = false;
 						}
 						//if(!isServer)//Server value is taken care of in the command
 						//{
@@ -228,6 +230,7 @@ public class PlayerControl : Controller {
 						player.dmgIndicator = dmgIndicator;
 						player.gunMesh.enabled = false;
 						player.charMesh.enabled = false;
+						player.squad.isCommanded = true;
 						//}
 						//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
 						//	Debug.Log("switched");
@@ -238,17 +241,21 @@ public class PlayerControl : Controller {
 						CmdReplacePlayer(pointingUnit.netId);
 					}else if(Input.GetMouseButtonDown(1)) //Right-click; remove player authority
 					{
-						if(player!=null)
+						if(pointingUnit == player)
 						{
-							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
-							player.hitIndicator = null;
-							player.dmgIndicator = null;
-							player.gunMesh.enabled = true;
-							player.charMesh.enabled = true;
-						}
-						player = null;
+							if(player!=null)
+							{
+								player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
+								player.hitIndicator = null;
+								player.dmgIndicator = null;
+								player.gunMesh.enabled = true;
+								player.charMesh.enabled = true;
+								player.squad.isCommanded = false;
+							}
+							player = null;
 
-						CmdRemovePlayer();
+							CmdRemovePlayer();
+						}
 					}
 				}
 				else if(pointingSquad != null)
@@ -363,7 +370,7 @@ public class PlayerControl : Controller {
 				if(Input.GetKey(KeyCode.A))
 					moveVec.x--;
 				moveVec.Normalize();
-				minimapCamera.transform.position += 10f* Time.deltaTime*new Vector3(moveVec.x, 0f, moveVec.y);//TODO: maybe replace '5f' with inspector parameter
+				minimapCamera.transform.position += 20f* Time.deltaTime*new Vector3(moveVec.x, 0f, moveVec.y);//TODO: maybe replace '5f' with inspector parameter
 			}
 		}else
 		{

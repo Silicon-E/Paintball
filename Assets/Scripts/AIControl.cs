@@ -8,6 +8,7 @@ using System.Runtime.ConstrainedExecution;
 using System;
 using UnityEngine.Events;
 using System.IO;
+using System.Runtime.InteropServices;
 
 public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-implemented in favor of randomly mulitplying target-leading
 
@@ -33,6 +34,13 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 	static float checkDelay = 1f;//Interval to check line-of-sight to target
 	private float checkCooldown;
 	[HideInInspector]public bool shouldChase = true;
+
+	private Vector3 Flatten(Vector3 inVec)
+	{
+		Vector3 outVec = new Vector3(inVec.x, inVec.y, inVec.z);
+		outVec.Scale(new Vector3(1,0,1));
+		return outVec;
+	}
 
 	List<Priority> movePris = new List<Priority>();
 	List<Priority> lookPris = new List<Priority>();
@@ -113,7 +121,8 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 		else
 			radius = (float)new System.Random(gameObject.GetInstanceID()).NextDouble()*moveRadius;
 		//Debug.Log(fp.team+": "+radius);
-		if(Vector3.Distance(fp.player.transform.position+Vector3.down, fp.squad.destination/*fp.squad.transform.position*/) < radius)
+		radius = Mathf.Max(radius, 1.25f);
+		if(Vector3.Distance(Flatten(fp.player.transform.position)/*+Vector3.down*/, fp.squad.destination/*fp.squad.transform.position*/) < radius)
 			return false;
 		
 		agent.destination = fp.squad.destination; //fp.squad.transform.position;
@@ -128,7 +137,7 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 
 		if(chasePos==null || chasePos==nullVec || target!=null) return false;//If targeting or not chasing
 
-		if(Vector3.Distance(fp.transform.position, chasePos) <= 0.5f)//If within 0.5m of chasePos
+		if(Vector3.Distance(Flatten(fp.transform.position), Flatten(chasePos)) <= 0.5f)//If within 0.5m of chasePos
 		{
 			chasePos = nullVec;
 			return false;
