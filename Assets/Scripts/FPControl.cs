@@ -41,6 +41,8 @@ public class FPControl : NetworkBehaviour {
 	public SpriteRenderer miniHighlight;
 	public SpriteRenderer miniSprite;
 	public Transform worldMuzzle;
+	public MeshRenderer charMesh;
+	public MeshRenderer gunMesh;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -143,12 +145,7 @@ public class FPControl : NetworkBehaviour {
 
 		if(newHealth<=0)
 		{
-			GameObject gunModel = worldMuzzle.transform.parent.gameObject;
-			gunModel.GetComponent<Rigidbody>().isKinematic = false;
-			gunModel.GetComponent<Rigidbody>().AddForce(-dir*Manager.ragdollImpulse *0.25f, ForceMode.Impulse);
-			gunModel.GetComponent<Collider>().enabled = true;
-			gunModel.transform.parent = null;
-			GameObject ragdoll = Ragdoll(true);
+			GameObject ragdoll = Ragdoll(true, dir);
 			for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
 			{
 				foreach(Collider c in Physics.OverlapSphere(point, r))
@@ -184,10 +181,17 @@ public class FPControl : NetworkBehaviour {
 		}
 	}
 
-	protected GameObject Ragdoll(bool isRagdoll)
+	protected GameObject Ragdoll(bool isRagdoll, Vector3 dir = default(Vector3))
 	{
 		if(isRagdoll)
 		{
+			gunMesh.GetComponent<Rigidbody>().isKinematic = false;
+			gunMesh.GetComponent<Rigidbody>().AddForce(-dir*Manager.ragdollImpulse *0.25f, ForceMode.Impulse);
+			gunMesh.GetComponent<Collider>().enabled = true;
+			gunMesh.transform.parent = null;
+
+			gunMesh.enabled = true;
+
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
 			if(control is PlayerControl)
 				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
@@ -197,16 +201,18 @@ public class FPControl : NetworkBehaviour {
 			return ragdoll;
 		}else
 		{
+			gunMesh.GetComponent<Rigidbody>().isKinematic = true;
+			gunMesh.GetComponent<Collider>().enabled = false;
+			gunMesh.transform.parent = camPivot.transform;
+			gunMesh.transform.localPosition = worldGunLocalPos;
+
+			if(control is PlayerControl)
+				gunMesh.enabled = false;
+			else
+				gunMesh.enabled = true;
+
 			return new GameObject();
 		}
-	}
-	protected void UnRagdoll()
-	{
-		GameObject gunModel = worldMuzzle.transform.parent.gameObject;
-		gunModel.GetComponent<Rigidbody>().isKinematic = true;
-		gunModel.GetComponent<Collider>().enabled = false;
-		gunModel.transform.parent = camPivot.transform;
-		gunModel.transform.localPosition = worldGunLocalPos;
 	}
 
 	void Update ()

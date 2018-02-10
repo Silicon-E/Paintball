@@ -10,8 +10,8 @@ public class CameraVals : MonoBehaviour {
 
 	void Start()
 	{
-		CommandBuffer buf = new CommandBuffer();
+		/*CommandBuffer buf = new CommandBuffer();
 		buf.DrawRenderer(viewModel.GetComponent<MeshRenderer>(), viewModel.GetComponent<MeshRenderer>().material);
-		Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, buf);
+		Camera.main.AddCommandBuffer(CameraEvent.AfterEverything, buf);*/
 	}
 }

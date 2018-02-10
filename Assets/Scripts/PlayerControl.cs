@@ -36,7 +36,7 @@ public class PlayerControl : Controller {
 	float commandLerp = 1;
 	static float lerpPerSec = 8;
 
-	private int squadInd = 0;
+	private int squadInd = 3; //NUMBER OF SQUADS THAT BEGIN ON THE FIELD
 	private int newSquadId = 0; //Use negative numbers for pre-spawned squads
 	private int numSquads = 0;
 	private int maxSquads;
@@ -226,6 +226,8 @@ public class PlayerControl : Controller {
 						player.control = this;
 						player.hitIndicator = hitIndicator;
 						player.dmgIndicator = dmgIndicator;
+						player.gunMesh.enabled = false;
+						player.charMesh.enabled = false;
 						//}
 						//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
 						//	Debug.Log("switched");
@@ -241,6 +243,8 @@ public class PlayerControl : Controller {
 							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
 							player.hitIndicator = null;
 							player.dmgIndicator = null;
+							player.gunMesh.enabled = true;
+							player.charMesh.enabled = true;
 						}
 						player = null;
 
