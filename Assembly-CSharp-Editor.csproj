@@ -51,6 +51,8 @@
      <None Include="Assets\UnityStandardParticleShadow.cginc" />
      <None Include="Assets\Particle Standard Surface.shader" />
      <None Include="Assets\Particle Standard Unlit.shader" />
+     <None Include="Assets\Standard Assets\Effects\Projectors\Shaders\ProjectorLight.shader" />
+     <None Include="Assets\Standard Assets\Effects\Projectors\Shaders\ProjectorMultiply.shader" />
      <None Include="Assets\Materials\DecalShaderDiffuseNormals.shader" />
  <Reference Include="UnityEditor.Advertisements">
  <HintPath>C:/Program Files/Unity/Editor/Data/UnityExtensions/Unity/Advertisements/Editor/UnityEditor.Advertisements.dll</HintPath>
