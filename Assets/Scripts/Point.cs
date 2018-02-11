@@ -205,6 +205,7 @@ public class Point : NetworkBehaviour {
 				gameManager.winningTeam = (Mathf.Abs(status) > 0) ?0 :1;
 			}else
 			{
+				gameManager.contestedPoint = next.pointId;
 				if(status == STATUS_HELD_0)
 					next.status = STATUS_WAIT_0;
 				else

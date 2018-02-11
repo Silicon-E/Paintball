@@ -13,6 +13,7 @@ public class GameManager : NetworkBehaviour {
 	//[HideInInspector]
 	[SyncVar(hook="WinUpdate")]
 	public int winningTeam; //Set by final points on server
+	public int contestedPoint = 0;
 
 	void Start ()
 	{

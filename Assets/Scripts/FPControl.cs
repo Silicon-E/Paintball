@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel.Design.Serialization;
 using System.Runtime.InteropServices;
 using System.Runtime.Remoting;
+using UnityEngine.AI;
 
 
 #if UNITY_EDITOR
@@ -43,6 +44,7 @@ public class FPControl : NetworkBehaviour {
 	public Transform worldMuzzle;
 	public MeshRenderer charMesh;
 	public MeshRenderer gunMesh;
+	public NavMeshAgent agent;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -197,6 +199,7 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.GetComponent<Collider>().enabled = true;
 			gunMesh.transform.parent = null;
 
+			charMesh.enabled = false; //TODO: remove
 			gunMesh.enabled = true;
 
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
@@ -215,16 +218,33 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.GetComponent<Collider>().enabled = false;
 			gunMesh.transform.parent = camPivot.transform;
 			gunMesh.transform.localPosition = worldGunLocalPos;
-
 			if(control is PlayerControl)
 			{
+				charMesh.enabled = false; //TODO: remove
 				gunMesh.enabled = false;
 				squad.isCommanded = true;
 			}else
+			{
+				charMesh.enabled = true; //TODO: remove
 				gunMesh.enabled = true;
+			}
 
 			return new GameObject();
 		}
+	}
+	public void Respawn()
+	{
+		RpcRespawn();
+	}
+	[ClientRpc] void RpcRespawn() //called on host and client
+	{
+		if(hasAuthority)
+		{
+			isDead = false;
+			health = 1;
+			timeSinceDamaged = 5f;
+		}
+		Ragdoll(false);
 	}
 
 	void Update ()
@@ -384,6 +404,8 @@ public class FPControl : NetworkBehaviour {
 			return;
 		}
 
+
+
 		Controller.input inp;
 		//if(cursorEngaged || !(control is PlayerControl))
 		//{
@@ -414,6 +436,15 @@ public class FPControl : NetworkBehaviour {
 
 			Vector3 horizMove = new Vector3(physics.velocity.x, 0f, physics.velocity.z);//X & Z movement
 			Vector3 moveVec = Quaternion.Euler(0,camPivot.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y).normalized;
+
+			if(Vector3.Distance(agent.nextPosition, transform.position) > 1f)
+			{
+				//agent.nextPosition = transform.position;
+				agent.speed = 0;
+				moveVec = (Flatten(agent.nextPosition) - Flatten(transform.position)).normalized;
+			}else
+				agent.speed = moveV;
+			
 			moveVec*=crouchFactor;//The more crouched (max at time of writing: 0.5f), the slower
 
 			if(moveVec != Vector3.zero)
@@ -442,7 +473,7 @@ public class FPControl : NetworkBehaviour {
 				collider.material.dynamicFriction = 10f;
 			}
 
-			if(inp.jump && crouchFactor>0.75f)//If crouchFactor grater than halfway down
+			if(inp.jump && crouchFactor>0.75f)//If crouchFactor greater than halfway down
 			{
 				physics.AddForce((Vector3.up*(jumpI + horizMove.magnitude*jumpPortion))*physics.mass, ForceMode.Impulse);
 				Vector3 newV = new Vector3(physics.velocity.x*(1-jumpPortion), physics.velocity.y, physics.velocity.z*(1-jumpPortion));

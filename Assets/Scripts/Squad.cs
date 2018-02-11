@@ -38,6 +38,9 @@ public class Squad : NetworkBehaviour {
 	public List<FPControl> members;
 	//SyncListInt memberIds = new SyncListInt();
 	[HideInInspector] public int wantedMembers = 1;
+	private Vector3 prevPos;
+	private float timeSinceMove = 0f;
+	private GameManager gameManager;
 
 	[HideInInspector] public static string[] CODES = {"alpha","bravo","charlie","delta","echo","foxtrot","india","kilo","november","oscar","quebec","romeo","sierra","tango","victor","xray","yankee","zulu"};
 	static string[] ABBR = {"a","b","c","d","e","f","i","k","n","o","q","r","s","t","v","x","y","z"};
@@ -46,10 +49,13 @@ public class Squad : NetworkBehaviour {
 
 	public override void OnStartServer()
 	{
+		gameManager = GameObject.FindObjectOfType<GameManager>();
+		prevPos = transform.position;
 		destination = transform.position;
 	}
 	public override void OnStartClient()
 	{
+		gameManager = GameObject.FindObjectOfType<GameManager>();
 		if(id >= 0) //If spawned instead of pre-included
 		{
 			foreach(PlayerControl p in GameObject.FindObjectsOfType<PlayerControl>())
@@ -256,6 +262,29 @@ public class Squad : NetworkBehaviour {
 	}
 
 	void Update () {
+		if(isServer) //Figure out respawns
+		{
+			if(transform.position == prevPos
+				&& (team==0 ?territoryId :-territoryId) > gameManager.contestedPoint)
+			{
+				timeSinceMove += Time.deltaTime;
+				if(timeSinceMove > 5f)
+				{
+					foreach(FPControl fp in members)
+					{
+						if(fp.isDead)
+						{
+							fp.Respawn();
+							break;
+						}
+					}
+					timeSinceMove = 0f;
+				}
+			}else
+				timeSinceMove = 0f;
+			prevPos = transform.position;
+		}
+
 		if(shouldBeServer != isServer)
 			return;
 		
