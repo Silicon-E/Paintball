@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
 using UnityEngine.Networking;
-using UnityEditor;
+//using UnityEditor;
 
 public class PlayerControl : Controller {
 

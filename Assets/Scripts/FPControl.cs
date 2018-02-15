@@ -42,7 +42,8 @@ public class FPControl : NetworkBehaviour {
 	public SpriteRenderer miniHighlight;
 	public SpriteRenderer miniSprite;
 	public Transform worldMuzzle;
-	public MeshRenderer charMesh;
+	public SkinnedMeshRenderer charMesh;
+	public Material[] teamMaterials;
 	public MeshRenderer gunMesh;
 	public NavMeshAgent agent;
 
@@ -92,7 +93,7 @@ public class FPControl : NetworkBehaviour {
 		team = t;
 		gameObject.layer = LayerMask.NameToLayer(Manager.teamLayers[team]);
 
-		GetComponent<MeshRenderer>().material = Manager.teamMaterials[team];
+		charMesh.material = teamMaterials[team]; //Manager.teamMaterials[team]; I'M NOT GOING TO PUT EVERYTHING IN THE RESOURCES FOLDER FOR THIS
 		foreach(SpriteRenderer s in GetComponentsInChildren<SpriteRenderer>())
 			s.color = Manager.teamColors[team];
 

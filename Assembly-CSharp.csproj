@@ -47,6 +47,19 @@
   </ItemGroup>
   <ItemGroup>
      <Compile Include="Assets\CameraVals.cs" />
+     <Compile Include="Assets\Lobby\Scripts\DraggablePanel.cs" />
+     <Compile Include="Assets\Lobby\Scripts\EventSystemChecker.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyCountdownPanel.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyHook.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyInfoPanel.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyMainMenu.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyManager.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyPlayer.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyPlayerList.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyServerEntry.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyServerList.cs" />
+     <Compile Include="Assets\Lobby\Scripts\Lobby\LobbyTopPanel.cs" />
+     <Compile Include="Assets\MainMenuCamera.cs" />
      <Compile Include="Assets\Materials\Decal.cs" />
      <Compile Include="Assets\Materials\DeferredDecalRenderer.cs" />
      <Compile Include="Assets\Scripts\AIControl.cs" />
@@ -73,8 +86,11 @@
      <Compile Include="Assets\SquadCenter.cs" />
      <None Include="Assets\UnityStandardParticles.cginc" />
      <None Include="Assets\UnityStandardParticleShadow.cginc" />
+     <None Include="Assets\Lobby\Documentation.txt" />
      <None Include="Assets\Particle Standard Surface.shader" />
+     <None Include="Assets\Lobby\Instruction.txt" />
      <None Include="Assets\Particle Standard Unlit.shader" />
+     <None Include="Assets\Fonts\OpenSans\License!.txt" />
      <None Include="Assets\Standard Assets\Effects\Projectors\Shaders\ProjectorLight.shader" />
      <None Include="Assets\Standard Assets\Effects\Projectors\Shaders\ProjectorMultiply.shader" />
      <None Include="Assets\Materials\DecalShaderDiffuseNormals.shader" />

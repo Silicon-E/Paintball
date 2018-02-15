@@ -29,8 +29,8 @@ public class Manager
 	static public List<HitInfo> bulletHits = new List<HitInfo>();//This necessary to get around Unity's built-in refusal to let Bullet send Cmds
 
 	static public Material[] teamMaterials = {
-		Resources.Load("Team 0") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 0.mat"),
-		Resources.Load("Team 1") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 1.mat")
+		Resources.Load("Robot Red") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 0.mat"),
+		Resources.Load("Robot Blue") as Material, //AssetDatabase.LoadAssetAtPath<Material>("Assets/Materials/Team 1.mat")
 	};
 
 	static public Color[] teamColors = {
