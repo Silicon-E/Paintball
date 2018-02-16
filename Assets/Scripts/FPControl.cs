@@ -30,6 +30,7 @@ public class FPControl : NetworkBehaviour {
 	public float jumpPortion;//Portion of horix movement converted to vertical movement
 	public float crouchSpeed;
 	public GameObject camPivot;
+	public GameObject gunPivot;
 	public float camHeight;
 	public LayerMask onGroundMask;
 	public GameObject ragdollPrefab;
@@ -43,9 +44,11 @@ public class FPControl : NetworkBehaviour {
 	public SpriteRenderer miniSprite;
 	public Transform worldMuzzle;
 	public SkinnedMeshRenderer charMesh;
+	public GameObject charArmature;
 	public Material[] teamMaterials;
 	public MeshRenderer gunMesh;
 	public NavMeshAgent agent;
+	public Animator animator;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -200,8 +203,12 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.GetComponent<Collider>().enabled = true;
 			gunMesh.transform.parent = null;
 
-			charMesh.enabled = false; //TODO: remove
 			gunMesh.enabled = true;
+			foreach(Collider c in charArmature.GetComponentsInChildren<Collider>())
+			{
+				c.enabled = true;
+			}
+			animator.enabled = false;
 
 			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
 			if(control is PlayerControl)
@@ -217,7 +224,7 @@ public class FPControl : NetworkBehaviour {
 		{
 			gunMesh.GetComponent<Rigidbody>().isKinematic = true;
 			gunMesh.GetComponent<Collider>().enabled = false;
-			gunMesh.transform.parent = camPivot.transform;
+			gunMesh.transform.parent = gunPivot.transform;
 			gunMesh.transform.localPosition = worldGunLocalPos;
 			if(control is PlayerControl)
 			{
@@ -250,7 +257,22 @@ public class FPControl : NetworkBehaviour {
 
 	void Update ()
 	{//Debug.Log(health);
-		
+		animator.SetFloat("Speed X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z);
+		animator.SetFloat("Speed Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x);
+		animator.SetFloat("Lean X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z / moveV);
+		animator.SetFloat("Lean Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x / moveV);
+		animator.SetFloat("Pitch", rotPitch / 90f);
+
+		animator.SetFloat("Speed", Flatten(physics.velocity).magnitude);
+		//if(Flatten(physics.velocity).magnitude == 0)
+		//	animator.SetFloat("AnimSpeed", 1);
+		//else
+		//	animator.SetFloat("AnimSpeed", Flatten(physics.velocity).magnitude);
+		if(!(control is PlayerControl) || isDead) //If not under player control or dead
+			miniHighlight.enabled = false;
+		else
+			miniHighlight.enabled = true;
+
 		if(player==null || !hasAuthority)
 		{
 			return;
@@ -271,10 +293,10 @@ public class FPControl : NetworkBehaviour {
 			miniSprite.color = Manager.teamColors[team];
 
 		if(!(control is PlayerControl) || isDead) //If not under player control or dead
-			miniHighlight.enabled = false;
+			;//miniHighlight.enabled = false; DOES NOT RUN WITHOUT AUTHORITY
 		else
 		{
-			miniHighlight.enabled = true;
+			//miniHighlight.enabled = true;
 			squad.transform.position = Vector3.Lerp(squad.transform.position, Flatten(transform.position), Time.deltaTime *5f);
 		}
 
@@ -310,6 +332,8 @@ public class FPControl : NetworkBehaviour {
 			camPivot.transform.parent = null;
 			transform.Rotate(new Vector3(0,camPivot.transform.rotation.eulerAngles.y - player.transform.rotation.eulerAngles.y,0));
 			camPivot.transform.parent = player.transform;
+
+			gunPivot.transform.rotation = camPivot.transform.rotation;
 
 			//player.transform.RotateAround(player.transform.position, Vector3.up, camPivot.transform.localRotation.eulerAngles.y);
 			//camPivot.transform.RotateAround(camPivot.transform.position, Vector3.up, -camPivot.transform.localRotation.eulerAngles.y);
@@ -438,7 +462,11 @@ public class FPControl : NetworkBehaviour {
 			Vector3 horizMove = new Vector3(physics.velocity.x, 0f, physics.velocity.z);//X & Z movement
 			Vector3 moveVec = Quaternion.Euler(0,camPivot.transform.rotation.eulerAngles.y,0) * new Vector3(inp.move.x, 0f, inp.move.y).normalized;
 
-			if(Vector3.Distance(agent.nextPosition, transform.position) > 1f)
+			if(control is PlayerControl)
+			{
+				agent.speed = moveV;
+				agent.destination = transform.position;
+			}else if(Vector3.Distance(agent.nextPosition, transform.position) > 1f)
 			{
 				//agent.nextPosition = transform.position;
 				agent.speed = 0;

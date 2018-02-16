@@ -220,25 +220,29 @@ public class PlayerControl : Controller {
 							player.control = player.gameObject.GetComponent<AIControl>(); //Make previous controlled player an AI
 							player.hitIndicator = null;
 							player.dmgIndicator = null;
+							player.gunMesh.enabled = true;
+							player.charMesh.enabled = true;
 							player.squad.isCommanded = false;
 						}
-						//if(!isServer)//Server value is taken care of in the command
-						//{
-						player = pointingUnit;
-						player.control = this;
-						player.hitIndicator = hitIndicator;
-						player.dmgIndicator = dmgIndicator;
-						player.gunMesh.enabled = false;
-						player.charMesh.enabled = false;
-						player.squad.isCommanded = true;
-						//}
+
+						if(!isServer)//Server value is taken care of in the command
+						{
+							player = pointingUnit;
+							player.control = this;
+							player.hitIndicator = hitIndicator;
+							player.dmgIndicator = dmgIndicator;
+							player.gunMesh.enabled = false;
+							player.charMesh.enabled = false;
+							player.squad.isCommanded = true;
+						}
 						//if(NetworkServer.ReplacePlayerForConnection(connectionToClient, player.gameObject, 0))
 						//	Debug.Log("switched");
 						HUDCanvas.enabled = true; //can't switch to dead unit, so re-enable HUD, as it may have been disabled by death
 
 						//NetworkServer.ReplacePlayerForConnection(connectionToClient, f.gameObject, playerControllerId);
 						// DOES NOT WORK; CANNOT RUN ON CLIENT GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);//TODO: does this solve the client not being able to send?
-						CmdReplacePlayer(pointingUnit.netId);
+
+						CmdReplacePlayer(pointingUnit.netId, isServer);
 					}else if(Input.GetMouseButtonDown(1)) //Right-click; remove player authority
 					{
 						if(pointingUnit == player)
@@ -407,17 +411,28 @@ public class PlayerControl : Controller {
 	}
 
 	[Command]
-	void CmdReplacePlayer(NetworkInstanceId netId)
+	void CmdReplacePlayer(NetworkInstanceId netId, bool sentFromServer)
 	{Debug.Log("Replace Player Command");
 
-		if(player!=null)
-			player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
+		//if(player!=null)
+		//	player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
 
 		GameObject obj = NetworkServer.FindLocalObject(netId);
 		player = obj.GetComponent<FPControl>();
 
+		//player = pointingUnit;
+		if(sentFromServer)
+		{
+			player.control = this;
+			player.hitIndicator = hitIndicator;
+			player.dmgIndicator = dmgIndicator;
+			player.gunMesh.enabled = false;
+			player.charMesh.enabled = false;
+			player.squad.isCommanded = true;
+		}
+
 		//NetworkServer.ReplacePlayerForConnection(connectionToClient, obj, playerControllerId);
-		obj.GetComponent<NetworkIdentity>().AssignClientAuthority(connectionToClient);
+		obj.GetComponent<NetworkIdentity>().AssignClientAuthority(/*(player.team==0) ?connectionToClient :*/connectionToClient);
 		//CLIENT ONLY obj.GetComponent<FPControl>().control = this; //obj.GetComponent<AIControl>();
 
 		//Set values in 'player' for the host
@@ -429,7 +444,7 @@ public class PlayerControl : Controller {
 	void CmdRemovePlayer()
 	{
 		if(player!=null)
-			player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
+			;//player.GetComponent<NetworkIdentity>().RemoveClientAuthority(connectionToClient);
 	}
 		
 

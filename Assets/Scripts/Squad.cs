@@ -6,6 +6,7 @@ using UnityEngine.Networking;
 using System.CodeDom;
 using System.Collections.Specialized;
 using UnityEngine.Events;
+using UnityEngine.AI;
 
 public class Squad : NetworkBehaviour {
 
@@ -285,7 +286,7 @@ public class Squad : NetworkBehaviour {
 			prevPos = transform.position;
 		}
 
-		if(shouldBeServer != isServer)
+		if(shouldBeServer != isServer)//===============================================================================================================
 			return;
 		
 		SetDestination();
@@ -373,6 +374,16 @@ public class Squad : NetworkBehaviour {
 				destination = waypoints[0].transform.position;
 		}else
 			destination = this.transform.position;
+
+		for(float i=0; i<10; i++)
+		{
+			NavMeshHit hit;
+			if(NavMesh.SamplePosition(new Vector3(destination.x, i, destination.z), out hit, 1f, NavMesh.AllAreas))
+			{
+				destination = hit.position;
+				break;
+			}
+		}
 
 		if(!isServer) //TODO: is necessary?
 			CmdSetDestination(destination); //
