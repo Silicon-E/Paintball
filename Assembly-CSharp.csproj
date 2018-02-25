@@ -62,6 +62,7 @@
      <Compile Include="Assets\MainMenuCamera.cs" />
      <Compile Include="Assets\Materials\Decal.cs" />
      <Compile Include="Assets\Materials\DeferredDecalRenderer.cs" />
+     <Compile Include="Assets\MiniCamImitator.cs" />
      <Compile Include="Assets\Scripts\AIControl.cs" />
      <Compile Include="Assets\Scripts\Bullet.cs" />
      <Compile Include="Assets\Scripts\Controller.cs" />
@@ -70,6 +71,7 @@
      <Compile Include="Assets\Scripts\FPControl.cs" />
      <Compile Include="Assets\Scripts\GUIPoint.cs" />
      <Compile Include="Assets\Scripts\GameManager.cs" />
+     <Compile Include="Assets\Scripts\HandIK.cs" />
      <Compile Include="Assets\Scripts\HealthDot.cs" />
      <Compile Include="Assets\Scripts\Manager.cs" />
      <Compile Include="Assets\Scripts\MiniX.cs" />
@@ -81,9 +83,9 @@
      <Compile Include="Assets\Scripts\Spawner.cs" />
      <Compile Include="Assets\Scripts\SplatParticles.cs" />
      <Compile Include="Assets\Scripts\Squad.cs" />
+     <Compile Include="Assets\Scripts\SquadCenter.cs" />
      <Compile Include="Assets\Scripts\TempNetHUD.cs" />
      <Compile Include="Assets\Scripts\Waypoint.cs" />
-     <Compile Include="Assets\SquadCenter.cs" />
      <None Include="Assets\UnityStandardParticles.cginc" />
      <None Include="Assets\UnityStandardParticleShadow.cginc" />
      <None Include="Assets\Lobby\Documentation.txt" />

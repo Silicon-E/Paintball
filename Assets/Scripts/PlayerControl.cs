@@ -89,9 +89,11 @@ public class PlayerControl : Controller {
 
 		hasStarted = true;
 
-
-		healthSlider.fillRect.GetComponent<Image>().color = Manager.teamColors[team];
-		healthSliderBG.color = Color.Lerp(Manager.teamColors[(team==0) ?1 :0], Color.black, 0.5f);
+		if(isLocalPlayer)
+		{
+			healthSlider.fillRect.GetComponent<Image>().color = Manager.teamColors[team];
+			healthSliderBG.color = Color.Lerp(Manager.teamColors[(team==0) ?1 :0], Color.black, 0.5f);
+		}
 	}
 
 	public override input GetInput()
@@ -620,6 +622,11 @@ public class PlayerControl : Controller {
 			}
 		}
 		if(target != null)
-			target.OnDamage(amount, dir, point, newHealth);
+		{
+			if(target.hasAuthority)
+				target.Damage(amount, dir, point);
+			else
+				target.OnDamage(amount, dir, point);
+		}
 	}
 }

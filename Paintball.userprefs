@@ -1,17 +1,18 @@
 ﻿<Properties StartupItem="Assembly-CSharp.csproj">
-  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" PreferredExecutionTarget="Unity.Instance.Unity Editor" />
   <MonoDevelop.Ide.Workbench ActiveDocument="Assets\Scripts\Squad.cs">
     <Files>
-      <File FileName="Assets\Scripts\PlayerControl.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\PlayerControl.cs" Line="193" Column="62" />
       <File FileName="Assets\Scripts\GameManager.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\FPControl.cs" Line="210" Column="5" />
-      <File FileName="Assets\Scripts\Squad.cs" Line="291" Column="17" />
-      <File FileName="Assets\SquadCenter.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\Bullet.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\FPControl.cs" Line="325" Column="17" />
+      <File FileName="Assets\Scripts\Squad.cs" Line="418" Column="36" />
+      <File FileName="Assets\Scripts\Manager.cs" Line="1" Column="1" />
       <File FileName="Assets\Scripts\AIControl.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\PlayerContValues.cs" Line="1" Column="1" />
-      <File FileName="Assets\Scripts\HealthDot.cs" Line="1" Column="1" />
-      <File FileName="Assets\CameraVals.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\Bullet.cs" Line="1" Column="1" />
+      <File FileName="Assets\MiniCamImitator.cs" Line="1" Column="1" />
+      <File FileName="Assets\Lobby\Scripts\Lobby\LobbyMainMenu.cs" Line="1" Column="1" />
+      <File FileName="Assets\Lobby\Scripts\Lobby\LobbyManager.cs" Line="1" Column="1" />
+      <File FileName="Assets\Scripts\HandIK.cs" Line="15" Column="25" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.DebuggingService.Breakpoints>
@@ -19,13 +20,12 @@
       <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Squad.cs" line="103" column="1" />
       <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Spawner.cs" line="78" column="1" />
       <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Spawner.cs" line="74" column="1" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="314" column="1" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\PlayerControl.cs" line="471" column="1" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="204" column="7" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="176" column="1" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\AIControl.cs" line="79" column="1" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="291" column="17" />
-      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="287" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\PlayerControl.cs" line="491" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="185" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\PlayerControl.cs" line="262" column="23" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\PlayerControl.cs" line="623" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\FPControl.cs" line="310" column="1" />
+      <Breakpoint file="C:\Users\seema\Documents\Unity\Paintball\Assets\Scripts\Squad.cs" line="34" column="1" />
     </BreakpointStore>
   </MonoDevelop.Ide.DebuggingService.Breakpoints>
   <MonoDevelop.Ide.DebuggingService.PinnedWatches />

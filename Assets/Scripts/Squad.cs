@@ -28,7 +28,15 @@ public class Squad : NetworkBehaviour {
 
 	[HideInInspector] public bool highlighted = false;
 	[HideInInspector] public bool isCommanded = false; //If this squad has a player-controlled member, follow that member
-	[HideInInspector] [SyncVar] public Vector3 destination;
+	[HideInInspector] [SyncVar/*(hook="DestHook")*/] public Vector3 destination;
+	/*void DestHook(Vector3 newVec)
+	{
+		destination = newVec;
+	}*/
+	[Command] void CmdSyncDestination(Vector3 newDest)
+	{
+		destination = newDest;
+	}
 	[HideInInspector] public int territoryId; //the squadId of the point that controls the territory this squad is in
 
 	//[HideInInspector]
@@ -40,7 +48,7 @@ public class Squad : NetworkBehaviour {
 	//SyncListInt memberIds = new SyncListInt();
 	[HideInInspector] public int wantedMembers = 1;
 	private Vector3 prevPos;
-	private float timeSinceMove = 0f;
+	[HideInInspector] public float timeSinceMoveOrDamage = 0f;
 	private GameManager gameManager;
 
 	[HideInInspector] public static string[] CODES = {"alpha","bravo","charlie","delta","echo","foxtrot","india","kilo","november","oscar","quebec","romeo","sierra","tango","victor","xray","yankee","zulu"};
@@ -244,7 +252,7 @@ public class Squad : NetworkBehaviour {
 		FPControl reFP = null;
 		Squad reSquad = null;
 		foreach(FPControl fp in GameObject.FindObjectsOfType<FPControl>())
-			if(fp.unitId == unit)
+			if(fp.unitId == unit/* && fp.team == team*/) // Units have team-independent IDs
 			{
 				reFP = fp;
 				break;
@@ -263,26 +271,35 @@ public class Squad : NetworkBehaviour {
 	}
 
 	void Update () {
+		Debug.DrawRay(destination, Vector3.up, Color.green);
 		if(isServer) //Figure out respawns
 		{
 			if(transform.position == prevPos
-				&& (team==0 ?territoryId :-territoryId) > gameManager.contestedPoint)
+				&& (team==0 ?(territoryId > gameManager.contestedPoint) :(territoryId < gameManager.contestedPoint)) )
 			{
-				timeSinceMove += Time.deltaTime;
-				if(timeSinceMove > 5f)
+				timeSinceMoveOrDamage += Time.deltaTime;
+				if(timeSinceMoveOrDamage > 5f)
 				{
 					foreach(FPControl fp in members)
 					{
 						if(fp.isDead)
 						{
-							fp.Respawn();
+							if(fp.hasAuthority)
+								fp.Respawn();
+							else
+							{
+								if(fp.isServer)
+									fp.RpcRespawn();
+								else
+									fp.CmdRespawn();
+							}
 							break;
 						}
 					}
-					timeSinceMove = 0f;
+					timeSinceMoveOrDamage = 0f;
 				}
 			}else
-				timeSinceMove = 0f;
+				timeSinceMoveOrDamage = 0f;
 			prevPos = transform.position;
 		}
 
@@ -291,7 +308,17 @@ public class Squad : NetworkBehaviour {
 		
 		SetDestination();
 
-		if(signal==0 && waypoints.Count>0 && waypoints[0].placed) //If can move to next point
+		bool someAlive = false;
+		foreach(FPControl fp in members)
+		{
+			if(!fp.isDead)
+				someAlive = true;
+		}
+		if(!someAlive && waypoints.Count>0 && waypoints[0].placed) //TODO: allow squad dragging when all members are dead
+		{
+			transform.position = waypoints[0].transform.position;
+			NextWaypoint();
+		}else if(signal==0 && waypoints.Count>0 && waypoints[0].placed) //If can move to next point
 		{
 			bool shouldNext = true;
 			Vector3 avgPos = Vector3.zero;
@@ -366,7 +393,9 @@ public class Squad : NetworkBehaviour {
 
 	public void SetDestination()
 	{
-		if(signal == 0)
+		if(isCommanded)
+			destination = this.transform.position;
+		else if(signal == 0)
 		{
 			if(waypoints.Count == 0 || !waypoints[0].placed)
 				destination = this.transform.position;
@@ -385,11 +414,14 @@ public class Squad : NetworkBehaviour {
 			}
 		}
 
-		if(!isServer) //TODO: is necessary?
-			CmdSetDestination(destination); //
+		if(!isServer)
+			CmdSyncDestination(destination);
+
+		//if(!isServer) //TODO: is necessary?
+		//	CmdSetDestination(destination);
 	}
-	[Command] void CmdSetDestination(Vector3 dest)
+	/*[Command] void CmdSetDestination(Vector3 dest)
 	{Debug.Log("CmdSetDestination: "+dest);
 		destination = dest;
-	}
+	}*/
 }

@@ -145,10 +145,13 @@ public class Bullet : NetworkBehaviour {
 
 	public void DamageUnit(FPControl fp, int amount, Vector3 point)//Called to damage this controller, isFromServer defaults to be "sent" from other side
 	{
-		fp.Damage(amount, -direction, point);
-		if(fp.playerControl != null)//Player may not have joined yet
-			//fp.playerControl.CmdDamageAlert(fp.unitId/*netId*/, amount, -direction, point, fp.health, (isServer ?1 :0));
-			Manager.bulletHits.Add(new Manager.HitInfo(fp.unitId, amount, -direction, point, fp.health/*, (isServer ?1 :0)*/));//This necessary to get around Unity's built-in refusal to let Bullet send Cmds
+		if(fp.hasAuthority)
+			fp.Damage(amount, -direction, point);
+		else
+			fp.OnDamage(amount, -direction, point);
+
+		if(fp.playerControl != null)//Player may not have joined yet;   IF COMMANDING PLAYER HAS NOT JOINED, THIS WILL NOT DEAL DAMAGE. HOWEVER, THIS SHOULD NEVER OCCUR.
+			Manager.bulletHits.Add(new Manager.HitInfo(fp.unitId, amount, -direction, point, fp.health/*, (isServer ?1 :0)*/)); //This necessary to get around Unity's built-in refusal to let Bullet send Cmds
 	}
 
 	/*

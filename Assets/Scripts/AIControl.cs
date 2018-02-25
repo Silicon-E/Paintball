@@ -124,6 +124,8 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 		radius = Mathf.Max(radius, 1.25f);
 		if(Vector3.Distance(Flatten(fp.player.transform.position)/*+Vector3.down*/, fp.squad.destination/*fp.squad.transform.position*/) < radius)
 			return false;
+		else if(radius == chaseRadius) //If chasing, but got to max distance
+			chasePos = nullVec; //Stop chasing
 		
 		agent.destination = fp.squad.destination; //fp.squad.transform.position;
 		Vector3 moveVec = Quaternion.Inverse(Quaternion.LookRotation(new Vector3(fp.camPivot.transform.forward.x,0f,fp.camPivot.transform.forward.z))) * agent.desiredVelocity;
@@ -145,6 +147,10 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 
 		agent.destination = chasePos;
 		inp.move = ToLocalMovement(agent.desiredVelocity);
+
+		if(! agent.CalculatePath(chasePos, new NavMeshPath())) // If can't get to position
+			chasePos = nullVec;                   // Stop chasing
+
 		return true;
 	}
 	bool moveIdealRange(ref input inp)

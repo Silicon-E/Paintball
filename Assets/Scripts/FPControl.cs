@@ -67,7 +67,7 @@ public class FPControl : NetworkBehaviour {
 	[SyncVar] private float rotYaw = 0;
 	[SyncVar] private float rotPitch = 0;
 	private GameManager gameManager;
-	[SyncVar] private float timeSinceDamaged = 0f;
+	[HideInInspector] [SyncVar] public float timeSinceDamaged = 0f;
 	[SyncVar] private float regenAccumulation = 0f;
 	private Transform vmMuzzle;
 	private Vector3 worldGunLocalPos;
@@ -143,48 +143,27 @@ public class FPControl : NetworkBehaviour {
 		squad = null;
 	}
 
-	public bool Damage(int amount, Vector3 dir, Vector3 point)//Called to damage this controller, isFromServer defaults to be "sent" from other side
+	public bool Damage(int amount, Vector3 dir, Vector3 point) // AUTHORITATIVE;   Called to damage this controller
 	{
 		if(isDead)
 			return false;
+		
 		health-=amount;
 		timeSinceDamaged = 0f;
-		return OnDamage(amount, dir, point, health);
-	}
-	public bool OnDamage(int amount, Vector3 dir, Vector3 point, int newHealth)
-	{
-		if(control is AIControl) ((AIControl)control).shouldChase = false;
-		if(dmgIndicator!=null) dmgIndicator.Add(dir);
 
-		if(newHealth<=0)
+		if(control is AIControl)
+			((AIControl)control).shouldChase = false;
+
+		OnDamage(amount, dir, point);
+
+		if(health<=0)
 		{
-			GameObject ragdoll = Ragdoll(true, dir);
-			for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
-			{
-				foreach(Collider c in Physics.OverlapSphere(point, r))
-				{
-					if(c.gameObject.layer == LayerMask.NameToLayer("Ragdoll"))
-					{
-						c.gameObject.GetComponent<Rigidbody>().AddForceAtPosition(-dir*Manager.ragdollImpulse, point, ForceMode.Impulse);
-						break;
-					}
-				}
-			}
-			GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
-			miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
-			if(control is PlayerControl)
-			{
-				((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f + Vector3.up;
-				((PlayerControl)control).HUDCanvas.enabled = false;
-			}
-			//TODO: Make this object ragdoll instead of spawning prefab
+			if(isServer)
+				RpcOnDie(dir, point);
+			else
+				CmdOnDie(dir, point);
 
-			collider.enabled = false;
-			physics.isKinematic = true;
-			miniSelect.enabled = false;
-
-			isDead = true;
-
+			Die(dir, point);
 			return true;
 		}else
 		{
@@ -192,6 +171,63 @@ public class FPControl : NetworkBehaviour {
 				((AIControl)control).TookDamage(dir);
 			return false;
 		}
+	}
+	public void OnDamage(int amount, Vector3 dir, Vector3 point) // NON-AUTHORITATIVE
+	{
+		if(dmgIndicator!=null)
+			dmgIndicator.Add(dir);
+
+		if(isServer)
+			squad.timeSinceMoveOrDamage = 0f; //this var only used on server
+	}
+
+	[Command] void CmdOnDie(Vector3 dir, Vector3 point) // NON-AUTHORITATIVE
+	{ OnDie(dir, point); }
+	[ClientRpc] void RpcOnDie(Vector3 dir, Vector3 point) // NON-AUTHORITATIVE
+	{ if(!isServer)
+		OnDie(dir, point); }
+	public void Die(Vector3 dir, Vector3 point) // AUTHORITATIVE
+	{
+		if(control is PlayerControl)
+		{
+			((PlayerControl)control).ragdoll = charArmature.GetComponent<Ragdoll>().root.transform;
+			squad.isCommanded = false;
+			charMesh.enabled = true;
+		}
+		if(control is PlayerControl)
+		{
+			((PlayerControl)control).lerpCamPos = Camera.main.transform.forward * -3f + Vector3.up;
+			((PlayerControl)control).HUDCanvas.enabled = false;
+		}
+
+		if(hasAuthority)
+			isDead = true;
+		
+		OnDie(dir, point);
+	}
+	public void OnDie(Vector3 dir, Vector3 point) // NON-AUTHORITATIVE
+	{
+		collider.enabled = false;
+		physics.isKinematic = true;
+
+		miniSelect.enabled = false;
+		miniSprite.enabled = false;
+
+		GameObject ragdoll = Ragdoll(true, dir);
+		for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
+		{
+			foreach(Collider c in Physics.OverlapSphere(point, r))
+			{
+				if(c.gameObject.layer == LayerMask.NameToLayer("Ragdoll"))
+				{
+					c.gameObject.GetComponent<Rigidbody>().AddForceAtPosition(-dir*Manager.ragdollImpulse, point, ForceMode.Impulse);
+					break;
+				}
+			}
+		}
+
+		GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
+		miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
 	}
 
 	protected GameObject Ragdoll(bool isRagdoll, Vector3 dir = default(Vector3))
@@ -202,23 +238,19 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.GetComponent<Rigidbody>().AddForce(-dir*Manager.ragdollImpulse *0.25f, ForceMode.Impulse);
 			gunMesh.GetComponent<Collider>().enabled = true;
 			gunMesh.transform.parent = null;
-
 			gunMesh.enabled = true;
+
 			foreach(Collider c in charArmature.GetComponentsInChildren<Collider>())
 			{
 				c.enabled = true;
+				c.GetComponent<Rigidbody>().isKinematic = false;
+				c.GetComponent<Rigidbody>().velocity = physics.velocity;
 			}
 			animator.enabled = false;
 
-			GameObject ragdoll = GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
-			if(control is PlayerControl)
-			{
-				((PlayerControl)control).ragdoll = ragdoll.GetComponent<Ragdoll>().root.transform;
-				squad.isCommanded = false;
-			}
-			foreach(Rigidbody r in ragdoll.GetComponentsInChildren<Rigidbody>())
-				r.velocity = physics.velocity;
-			
+			GameObject ragdoll = charArmature;//GameObject.Instantiate(ragdollPrefab, player.transform.position, player.transform.rotation);
+
+
 			return ragdoll;
 		}else
 		{
@@ -226,41 +258,78 @@ public class FPControl : NetworkBehaviour {
 			gunMesh.GetComponent<Collider>().enabled = false;
 			gunMesh.transform.parent = gunPivot.transform;
 			gunMesh.transform.localPosition = worldGunLocalPos;
+
+			foreach(Collider c in charArmature.GetComponentsInChildren<Collider>())
+			{
+				c.enabled = false;
+				c.GetComponent<Rigidbody>().isKinematic = true;
+			}
+			animator.enabled = true;
+
 			if(control is PlayerControl)
 			{
-				charMesh.enabled = false; //TODO: remove
+				charMesh.enabled = false;
 				gunMesh.enabled = false;
-				squad.isCommanded = true;
 			}else
 			{
-				charMesh.enabled = true; //TODO: remove
+				charMesh.enabled = true;
 				gunMesh.enabled = true;
 			}
 
 			return new GameObject();
 		}
 	}
-	public void Respawn()
+
+	public void Respawn() // AUTHORITATIVE; Attempt to respawn
 	{
-		RpcRespawn();
-	}
-	[ClientRpc] void RpcRespawn() //called on host and client
-	{
-		if(hasAuthority)
+		NavMeshHit hit;
+		Vector3 tryPos = squad.transform.position   +   AIControl.moveRadius * new Vector3(UnityEngine.Random.Range(-1f,1f), UnityEngine.Random.Range(-1f,1f), UnityEngine.Random.Range(-1f,1f));
+		if(NavMesh.SamplePosition(tryPos, out hit, 10f, NavMesh.AllAreas))
 		{
+			// Actually respawn
+
+			collider.enabled = true;
+			physics.isKinematic = false;
+
 			isDead = false;
 			health = 1;
-			timeSinceDamaged = 5f;
+			timeSinceDamaged = 5f; // Takes 5 seconds to start regen instead of 10
+
+			if(isServer)
+				RpcOnRespawn();
+			else
+				CmdOnRespawn();
+			
+			OnRespawn();
+
+			transform.position = hit.position;
 		}
+	}
+	public void OnRespawn() // NON-AUTHORITATIVE
+	{
+		miniSelect.enabled = true;
+		miniSprite.enabled = true;
+		if(control is PlayerControl)
+			squad.isCommanded = true;
 		Ragdoll(false);
 	}
+	[Command] public void CmdRespawn() // AUTHORITATIVE
+	{ Respawn(); }
+	[ClientRpc] public void RpcRespawn() // AUTHORITATIVE
+	{ if(!isServer)
+			Respawn(); }
+	[Command] void CmdOnRespawn() // NON-AUTHORITATIVE
+	{ OnRespawn(); }
+	[ClientRpc] void RpcOnRespawn() // NON-AUTHORITATIVE
+	{ if(!isServer)
+		OnRespawn(); }
 
 	void Update ()
 	{//Debug.Log(health);
-		animator.SetFloat("Speed X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z);
-		animator.SetFloat("Speed Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x);
-		animator.SetFloat("Lean X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z / moveV);
-		animator.SetFloat("Lean Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x / moveV);
+		animator.SetFloat("Speed X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x);
+		animator.SetFloat("Speed Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z);
+		//animator.SetFloat("Lean X", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).x / moveV);
+		//animator.SetFloat("Lean Z", (Quaternion.Euler(0, -rotYaw, 0) * physics.velocity).z / moveV);
 		animator.SetFloat("Pitch", rotPitch / 90f);
 
 		animator.SetFloat("Speed", Flatten(physics.velocity).magnitude);
@@ -294,7 +363,7 @@ public class FPControl : NetworkBehaviour {
 
 		if(!(control is PlayerControl) || isDead) //If not under player control or dead
 			;//miniHighlight.enabled = false; DOES NOT RUN WITHOUT AUTHORITY
-		else
+		else // If under player control and alive
 		{
 			//miniHighlight.enabled = true;
 			squad.transform.position = Vector3.Lerp(squad.transform.position, Flatten(transform.position), Time.deltaTime *5f);
@@ -428,7 +497,6 @@ public class FPControl : NetworkBehaviour {
 		{
 			return;
 		}
-
 
 
 		Controller.input inp;
