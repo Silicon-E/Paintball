@@ -46,6 +46,7 @@ public class FPControl : NetworkBehaviour {
 	public SkinnedMeshRenderer charMesh;
 	public GameObject charArmature;
 	public Material[] teamMaterials;
+	public Material[] gunMaterials;
 	public MeshRenderer gunMesh;
 	public NavMeshAgent agent;
 	public Animator animator;
@@ -83,7 +84,7 @@ public class FPControl : NetworkBehaviour {
 	{
 		gameManager = GameObject.FindObjectOfType<GameManager>();
 		vmMuzzle = Camera.main.GetComponent<CameraVals>().vmMuzzle;// GetComponentInChildren<Mesh>().GetComponentInChildren<Transform>();
-		worldGunLocalPos = worldMuzzle.transform.parent.position;
+		worldGunLocalPos = gunMesh.transform.localPosition;
 		//if(!hasAuthority)
 			//Init(isServer ?1 :0);//Init with other team
 
@@ -97,6 +98,8 @@ public class FPControl : NetworkBehaviour {
 		gameObject.layer = LayerMask.NameToLayer(Manager.teamLayers[team]);
 
 		charMesh.material = teamMaterials[team]; //Manager.teamMaterials[team]; I'M NOT GOING TO PUT EVERYTHING IN THE RESOURCES FOLDER FOR THIS
+		gunMesh.material = gunMaterials[team];
+
 		foreach(SpriteRenderer s in GetComponentsInChildren<SpriteRenderer>())
 			s.color = Manager.teamColors[team];
 
@@ -303,6 +306,11 @@ public class FPControl : NetworkBehaviour {
 			OnRespawn();
 
 			transform.position = hit.position;
+			agent.Warp(hit.position);
+			if(isServer)
+				RpcWarpAgent(hit.position);
+			else
+				CmdWarpAgent(hit.position);
 		}
 	}
 	public void OnRespawn() // NON-AUTHORITATIVE
@@ -323,6 +331,12 @@ public class FPControl : NetworkBehaviour {
 	[ClientRpc] void RpcOnRespawn() // NON-AUTHORITATIVE
 	{ if(!isServer)
 		OnRespawn(); }
+
+	[Command] public void CmdWarpAgent(Vector3 newPos) // AUTHORITATIVE
+	{ agent.Warp(newPos); }
+	[ClientRpc] public void RpcWarpAgent(Vector3 newPos) // AUTHORITATIVE
+	{ if(!isServer)
+		agent.Warp(newPos); }
 
 	void Update ()
 	{//Debug.Log(health);

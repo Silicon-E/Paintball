@@ -137,7 +137,8 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 		//TODO: if mode is not "kill things" AND chase pos is too far from squad pos
 			//return false;
 
-		if(chasePos==null || chasePos==nullVec || target!=null) return false;//If targeting or not chasing
+		if(chasePos==null || chasePos==nullVec || target!=null) //If targeting or not chasing
+			return false;
 
 		if(Vector3.Distance(Flatten(fp.transform.position), Flatten(chasePos)) <= 0.5f)//If within 0.5m of chasePos
 		{
@@ -264,8 +265,14 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 	{
 		if(newTarget==null && target!=null)
 		{
-			if(shouldChase) chasePos = target.transform.position;
-			else shouldChase = true;//shouldChase being false is a 1-time ticket to not chase. Used to keep AIs from chasing players they just killed.
+			if(target.GetComponent<FPControl>().isDead)
+				chasePos = nullVec;       // Don't chase if prev target was just killed
+			else
+			{
+				if(shouldChase)
+					chasePos = target.transform.position;
+				else shouldChase = true;// <DOES NOT WORK> shouldChase being false is a 1-time ticket to not chase. Used to keep AIs from chasing players they just killed.
+			}
 			noiseMulti = 1f;
 		}
 		target = newTarget;

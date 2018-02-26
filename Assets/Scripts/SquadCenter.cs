@@ -41,7 +41,7 @@ public class SquadCenter : MonoBehaviour {
 
 	void OnTriggerEnter(Collider other)
 	{
-		if(squad.hasAuthority  &&  other.tag == "Territory") //If other is a territory collider
+		if(/*squad.hasAuthority  && MUST HAPPEN ON SERVER*/  other.tag == "Territory") //If other is a territory collider
 		{
 			Point parentPoint = other.GetComponentInParent<Point>();
 			if(parentPoint != null)
