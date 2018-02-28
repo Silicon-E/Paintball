@@ -216,7 +216,7 @@ public class FPControl : NetworkBehaviour {
 		miniSelect.enabled = false;
 		miniSprite.enabled = false;
 
-		GameObject ragdoll = Ragdoll(true, dir);
+		/*GameObject ragdoll = Ragdoll(true, dir);
 		for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
 		{
 			foreach(Collider c in Physics.OverlapSphere(point, r))
@@ -227,7 +227,7 @@ public class FPControl : NetworkBehaviour {
 					break;
 				}
 			}
-		}
+		}*/
 
 		GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
 		miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
@@ -291,8 +291,8 @@ public class FPControl : NetworkBehaviour {
 		{
 			// Actually respawn
 
-			collider.enabled = true;
-			physics.isKinematic = false;
+			//collider.enabled = true; MOVED TO NON-AUTHORITATIVE
+			//physics.isKinematic = false;
 
 			isDead = false;
 			health = 1;
@@ -315,11 +315,15 @@ public class FPControl : NetworkBehaviour {
 	}
 	public void OnRespawn() // NON-AUTHORITATIVE
 	{
+		collider.enabled = true;
+		physics.isKinematic = false;
+
 		miniSelect.enabled = true;
 		miniSprite.enabled = true;
+
 		if(control is PlayerControl)
 			squad.isCommanded = true;
-		Ragdoll(false);
+		//Ragdoll(false);
 	}
 	[Command] public void CmdRespawn() // AUTHORITATIVE
 	{ Respawn(); }

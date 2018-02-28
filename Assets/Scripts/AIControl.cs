@@ -307,6 +307,11 @@ public class AIControl : Controller {       //NOTE: noise AND noiseMulti are de-
 	{
 		damageDir = dir.normalized;
 	}
+	public void Died()
+	{
+		target = null;
+		chasePos = nullVec;
+	}
 
 	private Vector2 ToLocalMovement(Vector3 worldVec)
 	{

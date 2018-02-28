@@ -73,6 +73,7 @@
      <Compile Include="Assets\Scripts\GameManager.cs" />
      <Compile Include="Assets\Scripts\HandIK.cs" />
      <Compile Include="Assets\Scripts\HealthDot.cs" />
+     <Compile Include="Assets\Scripts\JoinGameHUD.cs" />
      <Compile Include="Assets\Scripts\Manager.cs" />
      <Compile Include="Assets\Scripts\MiniX.cs" />
      <Compile Include="Assets\Scripts\PlayerContValues.cs" />
