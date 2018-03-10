@@ -14,6 +14,8 @@ public class Point : NetworkBehaviour {
 	public Point nextPoint1 = null; //Adjacent point on team 1's side
 	public GUIPoint guiPoint; //Contains this point's GUI elements
 	public GameManager gameManager;
+	public MeshRenderer mesh;
+	public SpriteRenderer sprite;
 
 	List<FPControl> FPCs0 = new List<FPControl>();
 	List<FPControl> FPCs1 = new List<FPControl>();
@@ -54,8 +56,25 @@ public class Point : NetworkBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-		if(isServer)
+
+		switch(status)
 		{
+		case STATUS_HELD_0:
+			mesh.material.color = Manager.pointColors[0];
+			sprite.color = new Color(1f, 0f, 0.5f, 0.25f);
+			break;
+		case STATUS_HELD_1:
+			mesh.material.color = Manager.pointColors[1];
+			sprite.color = new Color(0f, 0.5f, 1f, 0.25f);
+			break;
+		default:
+			mesh.material.color = new Color(0.75f, 0.75f, 0.75f);
+			sprite.color = Color.clear;
+			break;
+		}
+
+		if(isServer)
+		{Debug.Log(pointId+": "+status);
 			occupants0=0;
 			foreach(FPControl fp in FPCs0)
 				if(!fp.isDead)
@@ -70,6 +89,7 @@ public class Point : NetworkBehaviour {
 			float change = Time.deltaTime / capTime;    //UPDATE CAP_PROGRESS
 			switch(Mathf.Abs(status)) //Abs(x), so handles both positive and negative cases
 			{
+			case STATUS_WAIT_0:
 			case STATUS_VACANT_0:
 				if(capProgress < change)
 					capProgress = 0;
@@ -92,16 +112,18 @@ public class Point : NetworkBehaviour {
 				guiPoint.fill.fillClockwise = true;
 				guiPoint.fill.color = Manager.teamColors[0];
 				guiPoint.dot.color = Manager.teamColors[0];
-			}else //if team 1 is capping or holding
+			}else if(status < 0) //if team 1 is capping or holding
 			{
 				guiPoint.fill.fillClockwise = false;
 				guiPoint.fill.color = Manager.teamColors[1];
 				guiPoint.dot.color = Manager.teamColors[1];
 			}
-		}else //if none or waiting
+		}else //if none
 		{
 			guiPoint.fill.color = Color.clear;
 		}
+		if(Mathf.Abs(status) == STATUS_WAIT_0)
+			guiPoint.fill.color = new Color(1f, 1f, 0.75f);
 
 		if (Mathf.Abs(status) == STATUS_WAIT_0) //If waiting
 		{
@@ -160,11 +182,16 @@ public class Point : NetworkBehaviour {
 			return;
 
 		if(status == STATUS_WAIT_0 //Stop waiting
-				&& occupants0 > 0)
+				&& ( occupants0 > 0  ||  capProgress==0 ))
+		{
 			status = STATUS_NONE;
-		else if(status == STATUS_WAIT_1
-				&& occupants1 > 0)
+			capProgress = 0;
+		}else if(status == STATUS_WAIT_1
+				&& ( occupants1 > 0  ||  capProgress==0 ))
+		{
 			status = STATUS_NONE;
+			capProgress = 0;
+		}
 
 
 
@@ -202,7 +229,7 @@ public class Point : NetworkBehaviour {
 			}
 			if(next==null) // WINNING
 			{
-				gameManager.winningTeam = (Mathf.Abs(status) > 0) ?0 :1;
+				gameManager.winningTeam = (status > 0) ?0 :1;
 			}else
 			{
 				gameManager.contestedPoint = next.pointId;
@@ -210,7 +237,7 @@ public class Point : NetworkBehaviour {
 					next.status = STATUS_WAIT_0;
 				else
 					next.status = STATUS_WAIT_1;
-				next.capProgress = 0f;
+				next.capProgress = 0.99f; // 0f;
 			}
 		}
 

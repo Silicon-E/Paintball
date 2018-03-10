@@ -27,14 +27,19 @@ public class PlayerControl : Controller {
 	public Button newSqButton;
 	public Canvas pauseCanvas;
 	public GameManager gameManager;
+	public MeshRenderer viewModel;
+
+	//public Material shadowMaterial;
+	public Material[] gunMaterials;
 
 	[HideInInspector]public int team = 0;
 	[HideInInspector]public bool hasStarted = false;
 	[HideInInspector]public Transform ragdoll;
 	[HideInInspector]public Vector3 lerpCamPos;
+	[HideInInspector]public List<FPControl> visLightUnits = new List<FPControl>();
 	static float lerpCamSpeed = 2f; 
 	bool commandMode = true;//Whether in minimap-based command mode
-	float commandLerp = 1;
+	[HideInInspector] public float commandLerp = 1;
 	static float lerpPerSec = 8;
 
 	private int squadInd = 3; //NUMBER OF SQUADS THAT BEGIN ON THE FIELD
@@ -79,6 +84,8 @@ public class PlayerControl : Controller {
 		commandStuff = vals.commandStuff;
 		newSqButton = vals.newSqButton;
 		pauseCanvas = vals.pauseCanvas;
+		viewModel = vals.viewModel;
+
 		maxSquads = Squad.CODES.Length;
 		newSqButton.onClick.AddListener(NewSquad);
 
@@ -93,7 +100,28 @@ public class PlayerControl : Controller {
 		{
 			healthSlider.fillRect.GetComponent<Image>().color = Manager.teamColors[team];
 			healthSliderBG.color = Color.Lerp(Manager.teamColors[(team==0) ?1 :0], Color.black, 0.5f);
+			viewModel.material = gunMaterials[team];
 		}
+
+//		MeshRenderer[] renderers = GameObject.FindObjectsOfType<MeshRenderer>();
+//		foreach(MeshRenderer mr in renderers)
+//		{
+//			if(mr.gameObject.layer == LayerMask.NameToLayer("Terrain"))
+//			{
+//				GameObject obj = Instantiate(mr.gameObject/*new GameObject()*/, mr.transform);
+//				/*obj.transform.localPosition = Vector3.zero;
+//				obj.transform.localScale = Vector3.one;
+//				obj.transform.localRotation = Quaternion.identity;
+//
+//				obj.AddComponent<MeshFilter>().sharedMesh = mr.GetComponent<MeshFilter>().sharedMesh;
+//				obj.AddComponent<MeshRenderer>().material = shadowMaterial;*/
+//
+//				obj.GetComponent<MeshRenderer>().material = shadowMaterial;
+//				obj.layer = LayerMask.NameToLayer("Shadow Caster");
+
+				//break;
+//			}
+//		}
 	}
 
 	public override input GetInput()
@@ -160,7 +188,19 @@ public class PlayerControl : Controller {
 		}
 
 		if(commandLerp==1)
+		{
 			commandStuff.SetActive(commandMode);
+			foreach(FPControl l in visLightUnits)
+			{
+				if(!l.isDead)
+					l.enabled = true;
+			}
+		}else
+		{
+			foreach(FPControl l in visLightUnits)
+				l.visLight.enabled = false;
+		}
+
 		if(commandMode)
 		{
 			if(Input.GetMouseButtonDown(0) && isPlacing)

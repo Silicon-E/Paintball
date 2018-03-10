@@ -50,6 +50,12 @@ public class FPControl : NetworkBehaviour {
 	public MeshRenderer gunMesh;
 	public NavMeshAgent agent;
 	public Animator animator;
+	public MeshRenderer visionCone;
+	public float visionInterval;
+	public Light visLight;
+
+	[HideInInspector] public List<FPControl> unitsInVisCone = new List<FPControl>();
+	private float visionCount = 0f;
 
 	//[HideInInspector]
 	/*[SyncVar]*/ public int team;
@@ -118,6 +124,15 @@ public class FPControl : NetworkBehaviour {
 				if(/*p.isLocalPlayer && */p.team==t && p.hasStarted)
 				{
 					playerControl = p;
+					if(playerControl.isLocalPlayer)
+					{
+						visLight.enabled = true;
+					}else
+					{
+						visionCone.enabled = false;
+						miniSprite.enabled = false;
+					}
+					playerControl.visLightUnits.Add(this);
 					break;
 				}
 			}
@@ -216,7 +231,9 @@ public class FPControl : NetworkBehaviour {
 		miniSelect.enabled = false;
 		miniSprite.enabled = false;
 
-		/*GameObject ragdoll = Ragdoll(true, dir);
+		visLight.enabled = false;
+
+		GameObject ragdoll = Ragdoll(true, dir);
 		for(float r=0.1f; r<=0.5f; r+= 0.1f)//Check increasingly large spheres up to r=0.5
 		{
 			foreach(Collider c in Physics.OverlapSphere(point, r))
@@ -227,7 +244,7 @@ public class FPControl : NetworkBehaviour {
 					break;
 				}
 			}
-		}*/
+		}
 
 		GameObject miniX = GameObject.Instantiate(miniXPrefab, player.transform.position, miniXPrefab.transform.rotation);
 		miniX.GetComponent<MiniX>().Init(Manager.teamColors[team]);
@@ -321,9 +338,12 @@ public class FPControl : NetworkBehaviour {
 		miniSelect.enabled = true;
 		miniSprite.enabled = true;
 
+		if(playerControl.commandLerp == 1f)
+			visLight.enabled = true;
+
 		if(control is PlayerControl)
 			squad.isCommanded = true;
-		//Ragdoll(false);
+		Ragdoll(false);
 	}
 	[Command] public void CmdRespawn() // AUTHORITATIVE
 	{ Respawn(); }
@@ -359,6 +379,30 @@ public class FPControl : NetworkBehaviour {
 			miniHighlight.enabled = false;
 		else
 			miniHighlight.enabled = true;
+
+		visionCount += Time.deltaTime;
+		if(visionCount > visionInterval
+			&& playerControl!=null
+			&& playerControl.isLocalPlayer)
+		{
+			visionCount = 0f;
+			foreach(FPControl fp in unitsInVisCone) //TODO: maybe set up a flagging system to skip FPs that have already been seen
+			{
+				RaycastHit hit;
+				Debug.DrawRay(camPivot.transform.position, (fp.transform.position - camPivot.transform.position), Color.magenta, 1f);
+				if(Physics.Raycast(camPivot.transform.position, (fp.transform.position - camPivot.transform.position), out hit, 128, Manager.losMasks[team]))
+				{
+					if(hit.collider.gameObject.layer == Manager.enemyMasks[team]
+							&& !isDead)
+						fp.miniSprite.enabled = true;
+					else
+						fp.miniSprite.enabled = false;
+				}else
+				{
+					fp.miniSprite.enabled = false; //This shouldn't ever fire; only here as a safeguard
+				}
+			}
+		}
 
 		if(player==null || !hasAuthority)
 		{

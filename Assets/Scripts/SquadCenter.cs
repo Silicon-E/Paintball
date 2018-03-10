@@ -47,7 +47,9 @@ public class SquadCenter : MonoBehaviour {
 			if(parentPoint != null)
 				squad.territoryId = parentPoint.pointId;
 			else
-				squad.territoryId = squad.team * 100; //If this is a free-floating territory trigger, it is assumed to be the spawn terriyorry and so always makes respawns possible.
+			{
+				squad.territoryId = other.GetComponent<SpawnAreaId>().pointId; /*squad.team * 100*/; //If this is a free-floating territory trigger, it is assumed to be the spawn terriyorry and so always makes respawns possible.
+			}
 		}
 	}
 }

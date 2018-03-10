@@ -15,17 +15,48 @@ Platform assembly: C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Manag
 Loading C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Managed\UnityEngine.UI.dll into Unity Child Domain
 Platform assembly: C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Managed\UnityEngine.Networking.dll (this message is harmless)
 Loading C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Managed\UnityEngine.Networking.dll into Unity Child Domain
-- Completed reload, in  0.231 seconds
+- Completed reload, in  0.163 seconds
 Platform assembly: C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Managed\System.Core.dll (this message is harmless)
 Platform assembly: C:\Users\seema\Documents\Unity\Paintball\Paintball_Data\Managed\System.dll (this message is harmless)
 <RI> Initializing input.
 <RI> Input initialized.
 desktop: 1920x1080 60Hz; virtual: 1920x1080 at 0,0
 <RI> Initialized touch support.
-UnloadTime: 1.334124 ms
+UnloadTime: 2.818369 ms
 Setting up 2 worker threads for Enlighten.
-  Thread -> id: 54c -> priority: 1 
-  Thread -> id: e60 -> priority: 1 
+  Thread -> id: 1f7c -> priority: 1 
+  Thread -> id: 2d90 -> priority: 1 
+The referenced script on this Behaviour is missing!
+ 
+(Filename:  Line: 1514)
+
+The referenced script on this Behaviour (Game Object 'CenterProbe') is missing!
+ 
+(Filename:  Line: 1743)
+
+A script behaviour (probably ProbeBaker?) has a different serialization layout when loading. (Read 32 bytes but expected 108 bytes)
+Did you #ifdef UNITY_EDITOR a section of your serialized properties in any of your scripts?
+ 
+(Filename:  Line: 1879)
+
+Unloading 6 Unused Serialized files (Serialized files now loaded: 0)
+UnloadTime: 8.166317 ms
+
+Unloading 21 unused Assets to reduce memory usage. Loaded Objects now: 4298.
+Total: 3.369875 ms (FindLiveObjects: 0.267851 ms CreateObjectMapping: 0.112987 ms MarkObjects: 1.016888 ms  DeleteObjects: 1.970962 ms)
+
+NetworkDiscovery set broadcast data to:NetworkManager:localhost:7777
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
+
+
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
+
+Trying to send command for object without authority.
+ 
+(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
+
 Trying to send command for object without authority.
  
 (Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
@@ -34,7 +65,7 @@ Trying to send command for object without authority.
  
 (Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
 
-Got Authority: Squad T1 #0 (UnityEngine.GameObject)
+Trying to send command for object without authority.
  
 (Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
 
@@ -42,75 +73,7 @@ Got Authority: Squad T1 #1 (UnityEngine.GameObject)
  
 (Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
 
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-RpcDamageAlert
- 
-(Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
-
-DamageAlert
+Got Authority: Squad T1 #0 (UnityEngine.GameObject)
  
 (Filename: C:/buildslave/unity/build/artifacts/generated/common/runtime/DebugBindings.gen.cpp Line: 51)
 

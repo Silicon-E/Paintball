@@ -37,6 +37,10 @@ public class Manager
 		new Color(1f, 0f, 0.5f),
 		new Color(0f, 0.5f, 1f)
 	};
+	static public Color[] pointColors = {
+		new Color(0.75f, 0.25f, 0.5f),
+		new Color(0.25f, 0.5f, 0.75f)
+	};
 	static public Color[] squadColors = {
 		new Color(1f, 0.5f, 0.5f),
 		new Color(0f, 0.75f, 1f)
@@ -47,6 +51,8 @@ public class Manager
 	public static String[] teamLayers = {"Team 0", "Team 1"};
 
 	public static LayerMask[] losMasks = {LayerMask.GetMask(new string[]{"Terrain","Team 1"}), LayerMask.GetMask(new string[]{"Terrain","Team 0"})};
+
+	public static LayerMask[] enemyMasks = {LayerMask.NameToLayer("Team 1"), LayerMask.NameToLayer("Team 0")};
 
 	public static List<Squad> needMembers = new List<Squad>();
 

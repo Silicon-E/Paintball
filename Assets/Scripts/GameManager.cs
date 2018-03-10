@@ -49,5 +49,34 @@ public class GameManager : NetworkBehaviour {
 			t += Time.deltaTime;
 			yield return null;
 		}
+
+		t=0f;
+		while(t < 5f)
+		{
+			t += Time.deltaTime;
+			yield return null;
+			GameObject.FindObjectOfType<JoinGameHUD>().BackWhileWaiting(); // Disconnects and exits to menu
+		}
 	}
+
+	public override void OnStartClient()
+	{
+		if(!isServer)
+			StartCoroutine("StartPlaying"); //GameObject.FindObjectOfType<JoinGameHUD>().StartPlaying();
+	}
+	IEnumerator StartPlaying()
+	{
+		while(GameObject.FindObjectOfType<JoinGameHUD>() == null)
+			yield return null;
+		GameObject.FindObjectOfType<JoinGameHUD>().StartPlaying();
+	}
+
+	/*void OnDisconnectedFromServer(NetworkDisconnection conn)
+	{
+		if(isServer)
+		{
+			//TODO: spawn persistent dialog saying "opponent disconnected"
+			GameObject.FindObjectOfType<JoinGameHUD>().BackWhileWaiting(); // Disconnects and exits to menu
+		}
+	}*/
 }

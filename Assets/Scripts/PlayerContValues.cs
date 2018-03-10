@@ -20,11 +20,21 @@ public class PlayerContValues : MonoBehaviour {
 	public RectTransform minimapCanvas;
 	public GameObject commandStuff;
 	public Button newSqButton;
+	public MeshRenderer viewModel;
+
+	public RectTransform waitingPane;
+	[HideInInspector] public JoinGameHUD joinHud = null;
 
 	[HideInInspector] public PlayerControl localPlayerControl;
 
 	public void UnPause()
 	{
 		localPlayerControl.UnPause();
+	}
+
+	public void BackWhileWaiting()
+	{
+		if(joinHud != null)
+			joinHud.BackWhileWaiting();
 	}
 }
