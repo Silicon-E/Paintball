@@ -176,6 +176,29 @@ public class Point : NetworkBehaviour {
 		}
 	}
 
+	public void OccupantDieCheck(int team, int id)
+	{
+		foreach(FPControl fp in (team==0 ?FPCs0 :FPCs1))
+		{
+			if(fp.unitId == id)
+			{
+				(team==0 ?FPCs0 :FPCs1).Remove(fp);
+				break;
+			}
+		}
+	}
+	/*public void OccupantRespawnCheck(int team, Vector3 location) TODO: needed if respawning units must leave and re-enter the point zone in order to cap
+	{
+		foreach(FPControl fp in (team==0 ?FPCs0 :FPCs1))
+		{
+			if(fp.unitId == id)
+			{
+				(team==0 ?FPCs0 :FPCs1).Remove(fp);
+				break;
+			}
+		}
+	}*/
+
 	void UpdateStatus()
 	{
 		if(gameManager.winningTeam != -1) //No points can be captured when a team has won

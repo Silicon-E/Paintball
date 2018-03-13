@@ -139,6 +139,8 @@ public class JoinGameHUD : MonoBehaviour
 		else if(mode == CLIENT)
 			manager.StopClient();
 		manager.GetComponent<MyLocalDiscovery>().StopBroadcast(); // Stops listening and broadcasting
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
 		SceneManager.LoadScene("Scenes/Main Menu");
 		Destroy(gameObject);
 	}	

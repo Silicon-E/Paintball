@@ -44,7 +44,7 @@ public class Squad : NetworkBehaviour {
 	[HideInInspector] public int signal;//The signal this suad should wait for before continuing to the next waypoint (0 is none)
 
 	//[HideInInspector]
-	public List<FPControl> members;
+	public List<FPControl> members = new List<FPControl>();
 	//SyncListInt memberIds = new SyncListInt();
 	[HideInInspector] public int wantedMembers = 1;
 	private Vector3 prevPos;
@@ -189,7 +189,8 @@ public class Squad : NetworkBehaviour {
 		{
 			foreach(Squad s in GameObject.FindObjectsOfType<Squad>())
 			{
-				while(s.members.Count < s.wantedMembers)//While found squad needs more members
+				while(s.team==team
+					&& s.members.Count < s.wantedMembers)//While found squad needs more members
 				{
 					if(!isServer)
 						CmdReassign(members[0].unitId, s.id); //Myst be before reassignment on this side, or members[0] will not exist
@@ -217,7 +218,8 @@ public class Squad : NetworkBehaviour {
 		{
 			foreach(Squad s in GameObject.FindObjectsOfType<Squad>())
 			{
-				while(s.members.Count > s.wantedMembers)//While found has excess members
+				while(s.team==team
+					&& s.members.Count > s.wantedMembers)//While found has excess members
 				{
 					s.members[0].Reassign(this);
 					if(!isServer)
@@ -322,15 +324,20 @@ public class Squad : NetworkBehaviour {
 		{
 			bool shouldNext = true;
 			Vector3 avgPos = Vector3.zero;
+			float numAlive = 0;
 			foreach(FPControl fp in members)
 			{
-				avgPos += fp.transform.position;
-				if(Vector3.Distance(destination, fp.transform.position) > AIControl.moveRadius)
+				if(!fp.isDead)
 				{
-					shouldNext = false; //If outside moveRadius of destination, do not go to next waypoint.
+					numAlive++;
+					avgPos += fp.transform.position;
+					if(Vector3.Distance(destination, fp.transform.position) > AIControl.moveRadius)
+					{
+						shouldNext = false; //If outside moveRadius of destination, do not go to next waypoint.
+					}
 				}
 			}
-			avgPos /= members.Count;
+			avgPos /= numAlive; //members.Count;
 			avgPos.Scale(new Vector3(1,0,1)); // Y is always 0
 
 			if(shouldNext)

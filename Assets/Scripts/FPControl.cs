@@ -225,6 +225,12 @@ public class FPControl : NetworkBehaviour {
 	}
 	public void OnDie(Vector3 dir, Vector3 point) // NON-AUTHORITATIVE
 	{
+		if(isServer) // Remove from capturing
+		{
+			foreach(Point p in GameObject.FindObjectsOfType<Point>())
+				p.OccupantDieCheck(team, unitId);
+		}
+
 		collider.enabled = false;
 		physics.isKinematic = true;
 
@@ -338,7 +344,8 @@ public class FPControl : NetworkBehaviour {
 		miniSelect.enabled = true;
 		miniSprite.enabled = true;
 
-		if(playerControl.commandLerp == 1f)
+		if(playerControl.commandLerp == 1f
+			&& playerControl.isLocalPlayer)
 			visLight.enabled = true;
 
 		if(control is PlayerControl)
